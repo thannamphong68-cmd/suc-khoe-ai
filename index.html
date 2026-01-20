@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genesis AI Health - Ultimate Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .gradient-text { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold gradient-text">GENESIS AI HEALTH</h1>
+                <p class="text-slate-400">Trợ lý phân tích sức khỏe thời gian thực</p>
+            </div>
+            <div id="ai-status" class="flex items-center gap-2 px-4 py-2 rounded-full glass text-sm">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> AI Online 24/7
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1 space-y-6">
+                <div class="glass p-6 rounded-3xl">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="user"></i> Thông số cơ thể
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Họ tên</label>
+                            <input type="text" id="name" value="Chiến binh" class="w-full bg-slate-800 border-none rounded-xl p-3 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-slate-400 mb-1">Cân nặng (kg)</label>
+                                <input type="number" id="weight" value="70" class="w-full bg-slate-800 border-none rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-400 mb-1">Chiều cao (cm)</label>
+                                <input type="number" id="height" value="175" class="w-full bg-slate-800 border-none rounded-xl p-3">
+                            </div>
+                        </div>
+                        <button onclick="analyzeHealth()" class="w-full bg-blue-600 hover:bg-blue-500 transition-all font-bold py-4 rounded-xl shadow-lg shadow-blue-900/20">
+                            PHÂN TÍCH NGAY
+                        </button>
+                    </div>
+                </div>
+
+                <div id="ai-advice-box" class="glass p-6 rounded-3xl border-l-4 border-blue-500 hidden">
+                    <h3 class="font-bold mb-2 flex items-center gap-2 text-blue-400">
+                        <i data-lucide="bot"></i> AI Tư vấn:
+                    </h3>
+                    <p id="ai-advice-text" class="text-sm leading-relaxed"></p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="glass p-6 rounded-3xl text-center">
+                        <p class="text-slate-400 text-sm">Chỉ số BMI</p>
+                        <h2 id="bmi-val" class="text-4xl font-bold text-blue-400">--</h2>
+                    </div>
+                    <div class="glass p-6 rounded-3xl text-center">
+                        <p class="text-slate-400 text-sm">Health Score</p>
+                        <h2 id="score-val" class="text-4xl font-bold text-green-400">--</h2>
+                    </div>
+                    <div class="glass p-6 rounded-3xl text-center">
+                        <p class="text-slate-400 text-sm">Nước cần uống</p>
+                        <h2 id="water-val" class="text-4xl font-bold text-cyan-400">--</h2>
+                    </div>
+                </div>
+
+                <div class="glass p-6 rounded-3xl h-[400px]">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Theo dõi tiến trình</h2>
+                        <button onclick="clearHistory()" class="text-xs text-red-400 hover:underline">Xóa lịch sử</button>
+                    </div>
+                    <canvas id="healthChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Khởi tạo Lucide Icons
+        lucide.createIcons();
+
+        let healthHistory = JSON.parse(localStorage.getItem('healthHistory')) || [];
+        let chart;
+
+        // Hàm phân tích AI
+        function analyzeHealth() {
+            const name = document.getElementById('name').value;
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const hMet = height / 100;
+            const bmi = (weight / (hMet * hMet)).toFixed(1);
+            
+            // Tính điểm sức khỏe & Lời khuyên
+            let score = 100 - Math.abs(bmi - 22) * 5;
+            if (score > 100) score = 100;
+            const water = (weight * 0.035).toFixed(1);
+
+            document.getElementById('bmi-val').innerText = bmi;
+            document.getElementById('score-val').innerText = Math.round(score);
+            document.getElementById('water-val').innerText = water + "L";
+
+            // Logic tư vấn AI
+            let advice = "";
+            if(bmi < 18.5) advice = `Chào ${name}, AI nhận thấy bạn đang hơi gầy. Hãy tăng cường Protein và tập Gym nhé!`;
+            else if(bmi < 25) advice = `Tuyệt vời ${name}! Chỉ số của bạn rất chuẩn. Hãy duy trì uống ${water}L nước mỗi ngày.`;
+            else advice = `Chào ${name}, bạn đang ở ngưỡng thừa cân. AI khuyên bạn giảm tinh bột và tăng Cardio 30p mỗi ngày.`;
+
+            document.getElementById('ai-advice-box').classList.remove('hidden');
+            document.getElementById('ai-advice-text').innerText = advice;
+
+            // Lưu lịch sử
+            const entry = { date: new Date().toLocaleTimeString(), bmi: bmi };
+            healthHistory.push(entry);
+            if(healthHistory.length > 7) healthHistory.shift(); // Giữ lại 7 bản ghi gần nhất
+            localStorage.setItem('healthHistory', JSON.stringify(healthHistory));
+
+            updateChart();
+        }
+
+        // Cấu hình biểu đồ
+        function initChart() {
+            const ctx = document.getElementById('healthChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: healthHistory.map(h => h.date),
+                    datasets: [{
+                        label: 'Chỉ số BMI qua các lần đo',
+                        data: healthHistory.map(h => h.bmi),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function updateChart() {
+            chart.data.labels = healthHistory.map(h => h.date);
+            chart.data.datasets[0].data = healthHistory.map(h => h.bmi);
+            chart.update();
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('healthHistory');
+            healthHistory = [];
+            updateChart();
+            location.reload();
+        }
+
+        window.onload = initChart;
+    </script>
+</body>
+</html>
