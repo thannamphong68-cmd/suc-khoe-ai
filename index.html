@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Genesis AI Health - Ultimate Dashboard</title>
+    <title>AI Health - Ultimate Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -93,21 +93,18 @@
     </div>
 
     <script>
-        // Khởi tạo Lucide Icons
         lucide.createIcons();
 
         let healthHistory = JSON.parse(localStorage.getItem('healthHistory')) || [];
         let chart;
 
-        // Hàm phân tích AI
         function analyzeHealth() {
             const name = document.getElementById('name').value;
             const weight = parseFloat(document.getElementById('weight').value);
             const height = parseFloat(document.getElementById('height').value);
             const hMet = height / 100;
             const bmi = (weight / (hMet * hMet)).toFixed(1);
-            
-            // Tính điểm sức khỏe & Lời khuyên
+
             let score = 100 - Math.abs(bmi - 22) * 5;
             if (score > 100) score = 100;
             const water = (weight * 0.035).toFixed(1);
@@ -116,7 +113,6 @@
             document.getElementById('score-val').innerText = Math.round(score);
             document.getElementById('water-val').innerText = water + "L";
 
-            // Logic tư vấn AI
             let advice = "";
             if(bmi < 18.5) advice = `Chào ${name}, AI nhận thấy bạn đang hơi gầy. Hãy tăng cường Protein và tập Gym nhé!`;
             else if(bmi < 25) advice = `Tuyệt vời ${name}! Chỉ số của bạn rất chuẩn. Hãy duy trì uống ${water}L nước mỗi ngày.`;
@@ -125,7 +121,6 @@
             document.getElementById('ai-advice-box').classList.remove('hidden');
             document.getElementById('ai-advice-text').innerText = advice;
 
-            // Lưu lịch sử
             const entry = { date: new Date().toLocaleTimeString(), bmi: bmi };
             healthHistory.push(entry);
             if(healthHistory.length > 7) healthHistory.shift(); // Giữ lại 7 bản ghi gần nhất
@@ -134,7 +129,6 @@
             updateChart();
         }
 
-        // Cấu hình biểu đồ
         function initChart() {
             const ctx = document.getElementById('healthChart').getContext('2d');
             chart = new Chart(ctx, {
@@ -180,4 +174,5 @@
         window.onload = initChart;
     </script>
 </body>
+
 </html>
