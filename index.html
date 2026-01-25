@@ -3,213 +3,318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HealthyAI Cinematic</title>
+    <title>HealthyAI.com | Premium Bio-Data</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f1f5f9; overflow-x: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=Syncopate:wght@700&display=swap');
         
-        /* Hiệu ứng hiện từ từ cho Modal */
-        .reveal-item { opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; }
-        .reveal-item.active { opacity: 1; transform: translateY(0); }
+        :root {
+            --neon-pink: #FF007A;
+            --neon-purple: #8A2BE2;
+            --neon-amber: #FFBF00;
+            --neon-green: #39FF14;
+            --bg-deep: #0a0510;
+        }
 
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); border-radius: 2rem; }
-        
-        /* Animation cho các ô chỉ số */
-        @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
-        .ai-active { animation: pulse-blue 2s infinite; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg-deep); 
+            color: #fff;
+            overflow-x: hidden;
+        }
 
-        #result-modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.95); align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
-        
-        .typewriter { overflow: hidden; border-right: .15em solid orange; white-space: nowrap; margin: 0 auto; letter-spacing: .15em; animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite; }
+        .font-tech { font-family: 'Syncopate', sans-serif; }
+
+        /* Hiệu ứng kính đa sắc */
+        .glass-vivid {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Nút bấm Đa sắc */
+        .btn-vivid {
+            background: linear-gradient(90deg, #FF007A, #8A2BE2, #FF007A);
+            background-size: 200% auto;
+            transition: 0.4s ease;
+            box-shadow: 0 0 20px rgba(255, 0, 122, 0.4);
+        }
+        .btn-vivid:hover { 
+            background-position: right center;
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 35px rgba(255, 0, 122, 0.6);
+        }
+
+        /* Animation Scan rực rỡ */
+        #scan-laser {
+            position: absolute; width: 100%; height: 4px;
+            background: linear-gradient(90deg, transparent, var(--neon-pink), var(--neon-green), transparent);
+            box-shadow: 0 0 20px var(--neon-pink);
+            z-index: 100; top: -10%; display: none;
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #FF007A, #FFBF00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 </head>
 <body>
 
-    <audio id="snd-typing" src="https://assets.mixkit.co/active_storage/sfx/1110/1110-preview.mp3"></audio>
+<div id="intro-screen" class="fixed inset-0 z-[10000] bg-[#0a0510] flex items-center justify-center overflow-hidden">
+    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-pink-600/20 blur-[150px] rounded-full"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[150px] rounded-full"></div>
 
-    <div id="intro-screen" class="fixed inset-0 z-[999] bg-[#020617] flex items-center justify-center">
-        <div class="text-center">
-            <h1 class="text-6xl font-black mb-4 tracking-tighter">Healthy<span class="text-blue-500">AI</span></h1>
-            <p id="ca-dao" class="text-blue-200/40 italic mb-8"></p>
-            <button onclick="startApp()" class="px-10 py-4 border border-blue-500 text-blue-500 rounded-full font-bold hover:bg-blue-500 hover:text-white transition-all">THÂM NHẬP HỆ THỐNG</button>
+    <div class="relative text-center z-10 p-6">
+        <h1 class="text-5xl md:text-7xl font-tech tracking-tighter mb-4 italic">
+            HEALTHY<span class="text-white">AI</span>
+        </h1>
+        <p id="slogan" class="text-gray-400 text-sm tracking-[0.3em] mb-12 uppercase">Tương lai của dữ liệu sống</p>
+
+        <div id="auth-trigger" class="relative inline-block cursor-pointer">
+            <div class="w-32 h-32 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:border-pink-500 transition-all duration-700">
+                <i class="fa-solid fa-fingerprint text-5xl text-pink-500 animate-pulse"></i>
+            </div>
+            <div id="auth-ring" class="absolute -inset-2 border border-pink-500 rounded-full opacity-0 scale-50 transition-all duration-1000"></div>
         </div>
+        <p class="mt-8 text-[10px] text-gray-500 tracking-widest font-bold">XÁC THỰC ĐỂ KÍCH HOẠT HỆ THỐNG</p>
     </div>
+</div>
 
-    <div class="p-4 lg:p-10 max-w-7xl mx-auto min-h-screen">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
-            <div class="lg:col-span-4 space-y-6">
-                <div class="glass p-8 border-t-4 border-blue-500">
-                    <h3 class="text-xs font-black uppercase text-blue-500 mb-6">Thông số sinh học</h3>
-                    <div class="space-y-4">
-                        <input type="text" id="uName" placeholder="Tên của bạn" class="w-full bg-white/5 p-4 rounded-xl border border-white/10 outline-none focus:border-blue-500">
-                        <div class="grid grid-cols-2 gap-4">
-                            <input type="number" id="uAge" placeholder="Tuổi" class="w-full bg-white/5 p-4 rounded-xl border border-white/10">
-                            <input type="number" id="uWeight" placeholder="Cân nặng" class="w-full bg-white/5 p-4 rounded-xl border border-white/10">
+<div class="container mx-auto px-6 py-10 max-w-7xl">
+    <header class="flex justify-between items-center mb-16">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-pink-600 to-purple-600 rounded-2xl shadow-[0_0_20px_rgba(255,0,122,0.4)]">
+                <i class="fa-solid fa-heart-pulse text-white text-xl"></i>
+            </div>
+            <h2 class="text-2xl font-tech tracking-tighter">HEALTHYAI<span class="text-pink-500">.COM</span></h2>
+        </div>
+        <div class="flex gap-4">
+            <div class="glass-vivid px-4 py-2 text-[10px] border-pink-500/30 flex items-center gap-2">
+                <span class="w-2 h-2 bg-pink-500 rounded-full animate-ping"></span> MÁY CHỦ: ACTIVE
+            </div>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-4">
+            <div class="glass-vivid p-10 space-y-8 border-t-4 border-pink-500">
+                <h3 class="text-xl font-bold flex items-center gap-3"><i class="fa-solid fa-user-gear text-pink-500"></i> ĐỊNH DANH</h3>
+                <div class="space-y-6">
+                    <input type="text" id="uName" placeholder="Tên của bạn" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:border-pink-500 outline-none transition-all">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="number" id="uAge" placeholder="Tuổi" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none">
+                        <select id="uGender" class="bg-[#1a0f2e] border border-white/10 p-4 rounded-2xl outline-none">
+                            <option value="male">Nam giới</option>
+                            <option value="female">Nữ giới</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="number" id="uHeight" placeholder="Chiều cao" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none">
+                        <input type="number" id="uWeight" placeholder="Cân nặng" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none">
+                    </div>
+                    <button onclick="startScanning()" class="w-full btn-vivid py-5 rounded-3xl font-bold uppercase tracking-widest text-sm text-white">
+                        QUÉT SINH HỌC <i class="fa-solid fa-microchip ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-8 space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-vivid p-8 border-t-4 border-amber-500">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">Thanh đo thể trạng (BMI)</h4>
+                    <div class="h-4 w-full bg-gray-900 rounded-full relative mb-10">
+                        <div class="absolute inset-0 flex rounded-full overflow-hidden">
+                            <div class="h-full bg-blue-500" style="width: 18.5%"></div>
+                            <div class="h-full bg-green-500" style="width: 25%"></div>
+                            <div class="h-full bg-amber-500" style="width: 25%"></div>
+                            <div class="h-full bg-pink-500" style="width: 31.5%"></div>
                         </div>
-                        <input type="number" id="uHeight" placeholder="Chiều cao (cm)" class="w-full bg-white/5 p-4 rounded-xl border border-white/10">
-                        <button onclick="runAnalysis()" class="w-full py-5 bg-blue-600 rounded-2xl font-black tracking-widest ai-active">BẮT ĐẦU QUÉT <i class="fas fa-microchip ml-2"></i></button>
+                        <div id="bmi-marker" class="absolute -top-1 w-1.5 h-6 bg-white shadow-[0_0_15px_#fff] z-10 transition-all duration-1000" style="left: 0%"></div>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div id="bmi-val" class="text-6xl font-black text-white">0.0</div>
+                        <div id="bmi-text" class="text-amber-500 font-bold italic tracking-tighter">DATA PENDING...</div>
+                    </div>
+                </div>
+
+                <div class="glass-vivid p-8 border-t-4 border-purple-500">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 text-center">Biểu đồ Radar 5 tầng</h4>
+                    <div class="h-[220px]">
+                        <canvas id="radarChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-8 glass p-8">
-                <canvas id="mainChart" class="max-h-[400px]"></canvas>
+            <div id="report-section" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
+                <div class="glass-vivid p-6 border-l-4 border-green-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <i class="fa-solid fa-apple-whole text-green-500 text-xl"></i>
+                        <h5 class="font-bold text-sm uppercase">Dinh dưỡng đề xuất</h5>
+                    </div>
+                    <div id="diet-data" class="space-y-3 text-xs text-gray-400"></div>
+                </div>
+
+                <div class="glass-vivid p-6 border-l-4 border-pink-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <i class="fa-solid fa-dumbbell text-pink-500 text-xl"></i>
+                        <h5 class="font-bold text-sm uppercase">Vận động thông minh</h5>
+                    </div>
+                    <div id="workout-data" class="space-y-3 text-xs text-gray-400"></div>
+                </div>
+
+                <div class="glass-vivid p-6 border-l-4 border-amber-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <i class="fa-solid fa-moon text-amber-500 text-xl"></i>
+                        <h5 class="font-bold text-sm uppercase">Tối ưu giấc ngủ</h5>
+                    </div>
+                    <div id="sleep-data" class="space-y-3 text-xs text-gray-400"></div>
+                </div>
+
+                <div class="glass-vivid p-6 border-l-4 border-red-500 bg-red-500/5">
+                    <div class="flex items-center gap-3 mb-6">
+                        <i class="fa-solid fa-triangle-exclamation text-red-500 text-xl"></i>
+                        <h5 class="font-bold text-sm uppercase">Cảnh báo rủi ro</h5>
+                    </div>
+                    <p id="warning-data" class="text-xs text-red-200/60 italic"></p>
+                </div>
+
+                <div class="md:col-span-2 text-center pt-8">
+                    <button onclick="downloadPNG()" class="px-12 py-5 btn-vivid rounded-full font-black uppercase text-xs tracking-[0.3em] text-white">Xuất báo cáo PNG</button>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="result-modal">
-        <div id="report" class="w-full max-w-4xl space-y-8 p-4">
-            <div class="reveal-item text-center">
-                <h2 id="resName" class="text-5xl font-black tracking-tighter text-white">--</h2>
-                <p id="resBioAge" class="text-blue-400 font-bold mt-2 uppercase tracking-widest"></p>
-            </div>
+<div id="scan-laser"></div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="reveal-item glass p-6 text-center border-b-2 border-blue-500">
-                    <p class="text-[10px] opacity-50 mb-1 uppercase">BMI Thực tế</p>
-                    <h4 id="resBMI" class="text-3xl font-black">--</h4>
-                </div>
-                <div class="reveal-item glass p-6 text-center border-b-2 border-emerald-500">
-                    <p class="text-[10px] opacity-50 mb-1 uppercase">Nước (L/Ngày)</p>
-                    <h4 id="resWater" class="text-3xl font-black text-emerald-400">--</h4>
-                </div>
-                <div class="reveal-item glass p-6 text-center border-b-2 border-orange-500">
-                    <p class="text-[10px] opacity-50 mb-1 uppercase">Mỡ cơ thể</p>
-                    <h4 id="resFat" class="text-3xl font-black text-orange-400">--</h4>
-                </div>
-                <div class="reveal-item glass p-6 text-center border-b-2 border-purple-500">
-                    <p class="text-[10px] opacity-50 mb-1 uppercase">Điểm Tế Bào</p>
-                    <h4 id="resCell" class="text-3xl font-black text-purple-400">--</h4>
-                </div>
-            </div>
+<script>
+    let radarChart;
 
-            <div class="reveal-item glass p-8 min-h-[150px] relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                <h5 class="text-blue-500 font-black text-xs uppercase mb-4">AI Insight:</h5>
-                <p id="ai-text" class="text-lg italic text-blue-100 leading-relaxed"></p>
-            </div>
+    // Logic Intro Vân tay rực rỡ
+    const authBox = document.getElementById('auth-trigger');
+    authBox.onmousedown = () => {
+        document.getElementById('auth-ring').style.opacity = '1';
+        document.getElementById('auth-ring').style.transform = 'scale(1.2)';
+        authBox.style.transform = 'scale(0.9)';
+        
+        setTimeout(() => {
+            anime({
+                targets: '#intro-screen',
+                opacity: 0,
+                translateY: '-100%',
+                easing: 'easeInOutExpo',
+                duration: 1200,
+                complete: () => document.getElementById('intro-screen').style.display = 'none'
+            });
+        }, 1500);
+    };
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="reveal-item glass p-6 bg-white/5">
-                    <i class="fas fa-clock text-blue-500 mb-4"></i>
-                    <h6 class="font-black text-xs uppercase mb-2">Giờ ngủ vàng</h6>
-                    <p id="resSleep" class="text-sm opacity-70"></p>
-                </div>
-                <div class="reveal-item glass p-6 bg-white/5">
-                    <i class="fas fa-utensils text-orange-500 mb-4"></i>
-                    <h6 class="font-black text-xs uppercase mb-2">Món ăn chủ đạo</h6>
-                    <p id="resFood" class="text-sm opacity-70"></p>
-                </div>
-                <div class="reveal-item glass p-6 bg-white/5">
-                    <i class="fas fa-running text-emerald-500 mb-4"></i>
-                    <h6 class="font-black text-xs uppercase mb-2">Bài tập mục tiêu</h6>
-                    <p id="resEx" class="text-sm opacity-70"></p>
-                </div>
-            </div>
+    function startScanning() {
+        const h = parseFloat(document.getElementById('uHeight').value);
+        const w = parseFloat(document.getElementById('uWeight').value);
+        const name = document.getElementById('uName').value || "BẠN";
 
-            <div class="reveal-item flex gap-4 pt-10">
-                <button onclick="download()" class="flex-1 py-4 bg-white text-black rounded-full font-black uppercase text-xs">Lưu báo cáo</button>
-                <button onclick="location.reload()" class="px-8 py-4 glass rounded-full font-black uppercase text-xs">Thoát</button>
-            </div>
-        </div>
-    </div>
+        if(!h || !w) return alert("Hệ thống yêu cầu thông số vật lý!");
 
-    <script>
-        const caDaos = ["Sức khỏe là vàng.", "Có sức khỏe là có tất cả.", "Ăn được ngủ được là tiên."];
-        let history = JSON.parse(localStorage.getItem('h_ai_v5') || '[]');
+        // Hiệu ứng tia Laser đa sắc
+        const laser = document.getElementById('scan-laser');
+        laser.style.display = 'block';
+        anime({
+            targets: laser,
+            top: ['0%', '100%'],
+            duration: 2000,
+            easing: 'easeInOutQuad',
+            complete: () => laser.style.display = 'none'
+        });
 
-        window.onload = () => {
-            document.getElementById('ca-dao').innerText = caDaos[Math.floor(Math.random() * caDaos.length)];
-            initChart();
-        };
+        const bmi = (w / ((h/100)**2)).toFixed(1);
+        document.getElementById('bmi-val').innerText = bmi;
+        
+        let pointer = ((bmi - 15) / (40 - 15)) * 100;
+        document.getElementById('bmi-marker').style.left = Math.max(0, Math.min(100, pointer)) + '%';
 
-        function startApp() {
-            document.getElementById('intro-screen').style.opacity = '0';
-            setTimeout(() => document.getElementById('intro-screen').style.display = 'none', 1000);
+        // Cập nhật trạng thái text
+        let stText = "TRẠNG THÁI TỐT";
+        if(bmi < 18.5) stText = "DƯỚI TRỌNG LƯỢNG";
+        else if(bmi > 25) stText = "QUÁ TRỌNG LƯỢNG";
+        document.getElementById('bmi-text').innerText = stText;
+
+        // Đổ dữ liệu vào các ô gợi ý
+        renderDetailedReport(bmi);
+        initRadar();
+
+        document.getElementById('report-section').classList.remove('hidden');
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function renderDetailedReport(bmi) {
+        const diet = document.getElementById('diet-data');
+        const workout = document.getElementById('workout-data');
+        const sleep = document.getElementById('sleep-data');
+        const warning = document.getElementById('warning-data');
+
+        if(bmi > 25) {
+            diet.innerHTML = `<p><i class="fa-solid fa-circle-dot mr-2 text-green-500"></i>Ưu tiên cá hồi, rau xanh đậm.</p><p><i class="fa-solid fa-circle-dot mr-2 text-green-500"></i>Giảm 25% lượng Carbs tinh chế.</p>`;
+            workout.innerHTML = `<p><i class="fa-solid fa-fire-flame-curved mr-2 text-pink-500"></i>Cardio cường độ cao 30p.</p><p><i class="fa-solid fa-fire-flame-curved mr-2 text-pink-500"></i>Tập cường độ cao (HIIT) 3 buổi/tuần.</p>`;
+            sleep.innerHTML = `<p><i class="fa-solid fa-moon mr-2 text-amber-500"></i>Ngủ trước 22h00 để phục hồi.</p>`;
+            warning.innerHTML = "Lưu ý: Chỉ số BMI cho thấy sự tích tụ mỡ nội tạng. Cần theo dõi đường huyết thường xuyên.";
+        } else {
+            diet.innerHTML = `<p><i class="fa-solid fa-circle-dot mr-2 text-green-500"></i>Bổ sung ngũ cốc nguyên hạt.</p><p><i class="fa-solid fa-circle-dot mr-2 text-green-500"></i>Tăng Protein từ trứng và các loại đậu.</p>`;
+            workout.innerHTML = `<p><i class="fa-solid fa-weight-hanging mr-2 text-pink-500"></i>Tập kháng lực (Weight Training).</p><p><i class="fa-solid fa-weight-hanging mr-2 text-pink-500"></i>Duy trì 10,000 bước chân mỗi ngày.</p>`;
+            sleep.innerHTML = `<p><i class="fa-solid fa-moon mr-2 text-amber-500"></i>Ngủ đủ 8 tiếng, tránh dùng điện thoại trước ngủ.</p>`;
+            warning.innerHTML = "Hệ thống ghi nhận: Cơ thể bạn đang ở trạng thái cân bằng. Hãy giữ thói quen kiểm tra sức khỏe mỗi 6 tháng.";
         }
+    }
 
-        function typeWriter(text, elementId, speed = 30) {
-            let i = 0;
-            const element = document.getElementById(elementId);
-            element.innerHTML = '';
-            document.getElementById('snd-typing').play();
-            
-            function type() {
-                if (i < text.length) {
-                    element.innerHTML += text.charAt(i);
-                    i++;
-                    setTimeout(type, speed);
-                } else {
-                    document.getElementById('snd-typing').pause();
-                }
-            }
-            type();
-        }
-
-        function runAnalysis() {
-            const h = parseFloat(document.getElementById('uHeight').value);
-            const w = parseFloat(document.getElementById('uWeight').value);
-            const age = parseInt(document.getElementById('uAge').value);
-            const name = document.getElementById('uName').value || "Bản thể số";
-
-            if (!h || !w || !age) return alert("Thiếu dữ liệu quét!");
-
-            const bmi = (w / ((h/100)**2)).toFixed(1);
-            const water = (w * 0.035).toFixed(1);
-            const bioAge = age + (bmi > 25 ? 4 : -2);
-            
-            // Điền dữ liệu
-            document.getElementById('resName').innerText = name;
-            document.getElementById('resBMI').innerText = bmi;
-            document.getElementById('resWater').innerText = water;
-            document.getElementById('resFat').innerText = (bmi * 1.2).toFixed(1) + "%";
-            document.getElementById('resCell').innerText = 100 - (Math.abs(bmi-22)*5);
-            document.getElementById('resBioAge').innerText = `TUỔI SINH HỌC: ${bioAge}`;
-            
-            document.getElementById('resSleep').innerText = "Nên bắt đầu từ 22:15 để tối ưu gan.";
-            document.getElementById('resFood').innerText = bmi > 25 ? "Salad ức gà, hạt điều, giảm cơm trắng." : "Sữa đậu nành, thịt bò, khoai tây hầm.";
-            document.getElementById('resEx').innerText = bmi > 25 ? "HIIT 20 phút mỗi sáng." : "Push-up và nâng tạ nhẹ.";
-
-            // Hiển thị Modal
-            document.getElementById('result-modal').style.display = 'flex';
-
-            // Hiệu ứng hiện từ từ (Staggered Reveal)
-            const items = document.querySelectorAll('.reveal-item');
-            items.forEach((item, index) => {
-                setTimeout(() => {
-                    item.classList.add('active');
-                    if(item.querySelector('#ai-text')) {
-                        typeWriter(`Hệ thống nhận diện mức BMI ${bmi}. Bạn đang trẻ hơn tuổi thật ${age - bioAge} tuổi. Hãy tập trung vào việc uống đủ ${water}L nước để duy trì trạng thái tế bào này...`, 'ai-text');
+    function initRadar() {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        if(radarChart) radarChart.destroy();
+        radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['CƠ BẮP', 'SỨC BỀN', 'TRAO ĐỔI CHẤT', 'MIỄN DỊCH', 'DẺO DAI'],
+                datasets: [{
+                    data: [80, 70, 90, 85, 75],
+                    backgroundColor: 'rgba(138, 43, 226, 0.2)',
+                    borderColor: '#8A2BE2',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#FF007A'
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { display: false },
+                        angleLines: { color: 'rgba(255,255,255,0.05)' },
+                        pointLabels: { color: '#888', font: { size: 9, weight: 'bold' } }
                     }
-                }, index * 400);
-            });
-        }
-
-        function initChart() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['1', '2', '3', '4', '5'],
-                    datasets: [{ label: 'BMI', data: [22, 23, 22.5, 24, 23.5], borderColor: '#3b82f6', tension: 0.4 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
 
-        function download() {
-            html2canvas(document.getElementById('report')).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'Health-Insight.png';
-                link.href = canvas.toDataURL();
-                link.click();
-            });
-        }
-    </script>
+    function downloadPNG() {
+        html2canvas(document.getElementById('report-section'), { backgroundColor: '#0a0510' }).then(canvas => {
+            const a = document.createElement('a');
+            a.download = 'HEALTHYAI_VIVID_REPORT.png';
+            a.href = canvas.toDataURL();
+            a.click();
+        });
+    }
+</script>
+
 </body>
 </html>
