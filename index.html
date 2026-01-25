@@ -3,360 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Health Vision Ultimate - Pro Max</title>
+    <title>Health Analytics Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-        :root { --primary: #3b82f6; --accent: #8b5cf6; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.5s ease; }
-        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); }
-        .neon-border { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; color: #1e293b; }
         
-        #intro-overlay { position: fixed; inset: 0; z-index: 9999; background: radial-gradient(circle, #1e293b, #0f172a); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .glass-card { background: white; border-radius: 2rem; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); }
+        .input-field { width: 100%; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; outline: none; transition: 0.3s; }
+        .input-field:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
+
+        #main-content.blur-bg { filter: blur(10px); pointer-events: none; }
         
-        #video-container { position: relative; border-radius: 2.5rem; overflow: hidden; background: #000; transition: transform 0.3s ease; }
-        #output_canvas { transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; }
-        
-        .bg-gym { filter: sepia(0.2) contrast(1.1) brightness(0.9); background: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1000&q=80') center/cover; }
-        .bg-medical { filter: hue-rotate(180deg) brightness(1.1); background: url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1000&q=80') center/cover; }
-        
-        .achievement-card { transition: all 0.3s; cursor: pointer; }
-        .achievement-card:hover { transform: scale(1.05); background: #f0f9ff; }
-        
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-        .scanner-line { position: absolute; width: 100%; height: 2px; background: rgba(59, 130, 246, 0.8); box-shadow: 0 0 15px #3b82f6; z-index: 10; display: none; animation: scan 2s linear infinite; }
+        #result-modal { 
+            display: none; position: fixed; inset: 0; z-index: 100;
+            background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(6px);
+            align-items: center; justify-content: center; padding: 20px;
+        }
+
+        .report-box {
+            background: white; width: 100%; max-width: 800px; border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .bmi-bar { height: 10px; background: linear-gradient(90deg, #60a5fa, #10b981, #fbbf24, #ef4444); border-radius: 10px; position: relative; }
+        .bmi-indicator { position: absolute; top: -6px; width: 4px; height: 22px; background: #0f172a; border-radius: 2px; border: 1px solid white; transition: 1s ease-out; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body>
 
-    <div id="intro-overlay">
-        <div class="relative">
-            <div class="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
-            <i class="fas fa-microchip text-blue-400 text-7xl relative animate-pulse"></i>
-        </div>
-        <h1 class="text-white text-5xl font-black mt-8 tracking-tighter">VISION <span class="text-blue-500">ULTIMATE</span></h1>
-        <p class="text-slate-400 mt-2 tracking-widest uppercase text-xs">Thế hệ phân tích sức khỏe 2026</p>
-        <div class="mt-12 w-64 h-1 bg-slate-800 rounded-full overflow-hidden">
-            <div id="loading-bar" class="h-full bg-blue-500 w-0 transition-all duration-2000"></div>
+    <div id="main-content" class="min-h-screen flex flex-col items-center justify-center p-6">
+        <div class="max-w-md w-full glass-card p-10 space-y-8">
+            <div class="text-center">
+                <div class="inline-block p-4 bg-blue-50 text-blue-600 rounded-2xl mb-4">
+                    <i class="fas fa-notes-medical text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold tracking-tight">PHÂN TÍCH SỨC KHỎE</h1>
+                <p class="text-slate-400 text-sm mt-1">Nhập chỉ số để AI lập báo cáo</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="uName" placeholder="Tên" class="input-field">
+                    <input type="number" id="uAge" placeholder="Tuổi" class="input-field">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <select id="uGender" class="input-field">
+                        <option>Nam</option><option>Nữ</option>
+                    </select>
+                    <input type="number" id="uWorkout" placeholder="Phút tập/ngày" class="input-field">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" id="uHeight" placeholder="Chiều cao (cm)" class="input-field">
+                    <input type="number" id="uWeight" placeholder="Cân nặng (kg)" class="input-field">
+                </div>
+                
+                <button onclick="analyze()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition active:scale-95">
+                    XUẤT BÁO CÁO <i class="fas fa-file-invoice ml-2"></i>
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="min-h-screen flex flex-col">
-        <nav class="glass sticky top-0 z-50 px-8 py-4 flex justify-between items-center border-b">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <i class="fas fa-bolt"></i>
-                </div>
+    <div id="result-modal">
+        <div class="report-box" id="capture-area">
+            <div class="p-8 border-b flex justify-between items-center bg-slate-50 rounded-t-[2.5rem]">
                 <div>
-                    <span class="text-lg font-black block leading-none">HEALTH PRO</span>
-                    <span id="ca-dao" class="text-[10px] text-slate-400 italic">Đang tải châm ngôn...</span>
+                    <h2 class="text-2xl font-black text-slate-800">KẾT QUẢ PHÂN TÍCH</h2>
+                    <p class="text-xs font-bold text-blue-600 uppercase" id="resHeaderInfo"></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Ngày phân tích</p>
+                    <p class="text-xs font-bold" id="resDate"></p>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-6">
-                <div class="hidden md:flex gap-2">
-                    <button onclick="changeTheme('default')" class="w-8 h-8 rounded-full border-2 border-white shadow bg-slate-200" title="Mặc định"></button>
-                    <button onclick="changeTheme('gym')" class="w-8 h-8 rounded-full border-2 border-white shadow bg-orange-400" title="Phòng Gym"></button>
-                    <button onclick="changeTheme('medical')" class="w-8 h-8 rounded-full border-2 border-white shadow bg-blue-400" title="Y tế"></button>
+
+            <div class="p-8 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end">
+                            <span class="text-4xl font-black" id="resBMI">0.0</span>
+                            <span class="text-xs font-black px-3 py-1 bg-blue-100 text-blue-600 rounded-lg" id="resStatus">---</span>
+                        </div>
+                        <div class="bmi-bar">
+                            <div id="bmiPointer" class="bmi-indicator" style="left: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-6 bg-slate-50 p-4 rounded-2xl">
+                        <div class="w-24 h-24"><canvas id="resChart"></canvas></div>
+                        <div class="text-[10px] font-bold space-y-1">
+                            <p class="text-blue-500">NƯỚC: <span id="resWater">0</span>%</p>
+                            <p class="text-orange-500">MỠ: <span id="resFat">0</span>%</p>
+                            <p class="text-emerald-500">CƠ/KHÁC: <span id="resMuscle">0</span>%</p>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="clearHistory()" class="text-xs font-bold text-red-400 hover:text-red-600 transition uppercase tracking-tighter">Xóa dữ liệu</button>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-5 bg-blue-50 rounded-2xl border-l-4 border-blue-500">
+                        <h4 class="text-[10px] font-black text-blue-700 uppercase mb-2">Nhận xét chung</h4>
+                        <p id="advGeneral" class="text-xs text-slate-600 leading-relaxed"></p>
+                    </div>
+                    <div class="p-5 bg-emerald-50 rounded-2xl border-l-4 border-emerald-500">
+                        <h4 class="text-[10px] font-black text-emerald-700 uppercase mb-2">Ăn uống & Tập luyện</h4>
+                        <p id="advDiet" class="text-xs text-slate-600 leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between p-4 bg-slate-900 text-white rounded-2xl">
+                    <span class="text-[10px] font-bold uppercase tracking-widest">Nhu cầu Calo mỗi ngày</span>
+                    <span class="text-xl font-black text-blue-400"><span id="resCalo">0</span> kcal</span>
+                </div>
             </div>
-        </nav>
 
-        <div class="flex-grow grid grid-cols-1 lg:grid-cols-12">
-            
-            <aside class="lg:col-span-3 border-r bg-white p-6 space-y-8 overflow-y-auto h-[calc(100vh-80px)] custom-scroll">
-                <section>
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Thông tin cá nhân</h3>
-                    <div class="grid gap-4">
-                        <div class="relative">
-                            <i class="fas fa-id-card absolute left-4 top-4 text-slate-300"></i>
-                            <input type="text" id="uName" placeholder="Họ và Tên" class="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-2xl text-sm outline-none border focus:border-blue-400 transition">
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="number" id="uAge" placeholder="Tuổi" class="w-1/2 p-3 bg-slate-50 rounded-2xl text-sm border">
-                            <select id="uGender" class="w-1/2 p-3 bg-slate-50 rounded-2xl text-sm border appearance-none text-slate-500">
-                                <option>Nam</option><option>Nữ</option><option>Khác</option>
-                            </select>
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="number" id="uHeight" placeholder="Cao(cm)" class="w-1/2 p-3 bg-slate-50 rounded-2xl text-sm border" oninput="calculateCore()">
-                            <input type="number" id="uWeight" placeholder="Nặng(kg)" class="w-1/2 p-3 bg-slate-50 rounded-2xl text-sm border" oninput="calculateCore()">
-                        </div>
-                        <div class="p-4 bg-slate-900 rounded-2xl">
-                            <label class="text-[9px] text-blue-400 font-bold uppercase mb-2 block tracking-widest">Thời gian tập: <span id="workVal">30</span>p</label>
-                            <input type="range" id="uWorkout" min="0" max="120" value="30" class="w-full accent-blue-500" oninput="document.getElementById('workVal').innerText = this.value">
-                        </div>
-                    </div>
-                </section>
-
-                <section class="space-y-4">
-                    <div class="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] text-white shadow-xl shadow-blue-200">
-                        <div class="flex justify-between items-start mb-4">
-                            <p class="text-xs font-bold opacity-80 uppercase">Chỉ số BMI</p>
-                            <i class="fas fa-chart-pie"></i>
-                        </div>
-                        <div class="flex items-baseline gap-2">
-                            <h2 id="valBMI" class="text-5xl font-black">--</h2>
-                            <span id="valBMIText" class="text-xs font-bold opacity-80">Chưa rõ</span>
-                        </div>
-                    </div>
-
-                    <div class="p-4 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
-                        <canvas id="bodyChart"></canvas>
-                    </div>
-                </section>
-            </aside>
-
-            <main class="lg:col-span-6 p-8 flex flex-col items-center">
-                <div id="video-container" class="neon-border w-full aspect-[4/3] max-w-2xl border-8 border-white shadow-2xl">
-                    <div id="scan-line" class="scanner-line"></div>
-                    <video id="input_video" class="hidden"></video>
-                    <canvas id="output_canvas"></canvas>
-                    
-                    <div id="virtual-bg" class="absolute inset-0 pointer-events-none opacity-30"></div>
-
-                    <div class="absolute inset-x-6 bottom-6 flex flex-col md:flex-row gap-4 items-center justify-between glass p-5 rounded-3xl">
-                        <div class="flex gap-4">
-                            <div class="text-center">
-                                <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Ánh sáng</p>
-                                <input type="range" id="brightness" min="50" max="150" value="100" class="w-20 accent-blue-500" oninput="applyFilters()">
-                            </div>
-                            <div class="text-center">
-                                <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Tương phản</p>
-                                <input type="range" id="contrast" min="50" max="150" value="100" class="w-20 accent-indigo-500" oninput="applyFilters()">
-                            </div>
-                        </div>
-                        <button onclick="startAI()" id="btnAction" class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl font-black text-sm tracking-widest transition shadow-lg shadow-blue-200 active:scale-95">
-                            QUÉT CƠ THỂ
-                        </button>
-                    </div>
-                </div>
-
-                <div class="w-full mt-10">
-                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <i class="fas fa-trophy text-amber-500"></i> Thành tựu sức khỏe
-                    </h3>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="achievement-card p-4 bg-white rounded-2xl border border-slate-100 text-center">
-                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <i class="fas fa-leaf text-green-600"></i>
-                            </div>
-                            <p class="text-[10px] font-bold">Người Sống Xanh</p>
-                        </div>
-                        <div class="achievement-card p-4 bg-white rounded-2xl border border-slate-100 text-center">
-                            <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <i class="fas fa-fire text-orange-600"></i>
-                            </div>
-                            <p class="text-[10px] font-bold">Kẻ Đốt Calo</p>
-                        </div>
-                        <div class="achievement-card p-4 bg-white rounded-2xl border border-slate-100 text-center opacity-40">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <i class="fas fa-medal text-blue-600"></i>
-                            </div>
-                            <p class="text-[10px] font-bold">Siêu Chiến Binh</p>
-                        </div>
-                    </div>
-                </div>
-            </main>
-
-            <aside class="lg:col-span-3 border-l bg-white p-6 overflow-y-auto h-[calc(100vh-80px)] custom-scroll">
-                <div id="result-area" class="hidden space-y-6 animate-fade-in">
-                    <div class="p-6 bg-slate-900 rounded-[2.5rem] text-white relative overflow-hidden">
-                        <i class="fas fa-brain absolute -right-4 -bottom-4 text-8xl opacity-10"></i>
-                        <h4 class="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4">AI Insight</h4>
-                        <p id="resGeneral" class="text-xs leading-relaxed font-light"></p>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="p-4 bg-orange-50 rounded-2xl border border-orange-100">
-                            <div class="flex items-center gap-3 mb-2 font-black text-[10px] text-orange-700 uppercase">
-                                <i class="fas fa-apple-alt"></i> Dinh dưỡng
-                            </div>
-                            <p id="resFood" class="text-xs text-slate-600 italic"></p>
-                        </div>
-                        <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                            <div class="flex items-center gap-3 mb-2 font-black text-[10px] text-blue-700 uppercase">
-                                <i class="fas fa-dumbbell"></i> Bài tập
-                            </div>
-                            <p id="resEx" class="text-xs text-slate-600 italic"></p>
-                        </div>
-                        <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100">
-                            <div class="flex items-center gap-3 mb-2 font-black text-[10px] text-purple-700 uppercase">
-                                <i class="fas fa-bed"></i> Giấc ngủ
-                            </div>
-                            <p id="resSleep" class="text-xs text-slate-600 italic"></p>
-                        </div>
-                    </div>
-
-                    <button onclick="takeSnapshot()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs tracking-widest hover:bg-blue-700 transition shadow-lg">
-                        XUẤT BÁO CÁO NGAY
-                    </button>
-                    
-                    <div id="history-box" class="pt-6 border-t mt-6">
-                        <h5 class="text-[10px] font-black text-slate-400 uppercase mb-4">Lịch sử đo gần đây</h5>
-                        <div id="history-list" class="space-y-3 text-[10px]"></div>
-                    </div>
-                </div>
-
-                <div id="idle-area" class="h-full flex flex-col items-center justify-center text-center opacity-30">
-                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-wave-square text-3xl"></i>
-                    </div>
-                    <p class="font-black text-xs uppercase tracking-widest">Sẵn sàng phân tích...</p>
-                </div>
-            </aside>
+            <div class="p-8 pt-0 flex gap-4">
+                <button onclick="downloadReport()" class="flex-1 py-4 bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase transition hover:bg-emerald-700">
+                    <i class="fas fa-download mr-2"></i> Tải ảnh báo cáo
+                </button>
+                <button onclick="closeModal()" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase transition hover:bg-slate-200">
+                    <i class="fas fa-eye-slash mr-2"></i> Ẩn báo cáo
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
-        const cadaos = [
-            "Có sức khỏe là có tất cả, không sức khỏe là không có gì.",
-            "Muốn cho thân thể bình yên, ăn rau quả tốt, luyện rèn thường xuyên.",
-            "Sức khỏe là vàng, AI là người dẫn đường.",
-            "Phòng bệnh hơn chữa bệnh, tập luyện hơn thuốc thang.",
-            "Cơm tám thơm mát, sức khỏe dạt dào."
-        ];
+        let myChart;
 
-        let bodyChart, historyData = JSON.parse(localStorage.getItem('healthHistory') || '[]');
+        function analyze() {
+            const name = document.getElementById('uName').value || "Thành viên";
+            const age = parseInt(document.getElementById('uAge').value);
+            const gender = document.getElementById('uGender').value;
+            const h = parseFloat(document.getElementById('uHeight').value);
+            const w = parseFloat(document.getElementById('uWeight').value);
+            const workout = parseInt(document.getElementById('uWorkout').value) || 0;
 
-        window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('loading-bar').style.width = '100%';
-                setTimeout(() => {
-                    document.getElementById('intro-overlay').style.opacity = '0';
-                    setTimeout(() => document.getElementById('intro-overlay').style.display = 'none', 1000);
-                    initAll();
-                }, 1000);
-            }, 500);
-        };
+            if (!h || !w || !age) return alert("Vui lòng điền Chiều cao, Cân nặng và Tuổi!");
 
-        function initAll() {
-            document.getElementById('ca-dao').innerText = cadaos[Math.floor(Math.random()*cadaos.length)];
-            const ctx = document.getElementById('bodyChart').getContext('2d');
-            bodyChart = new Chart(ctx, {
+            // Tính BMI
+            const bmi = (w / ((h / 100) ** 2)).toFixed(1);
+            document.getElementById('resBMI').innerText = bmi;
+            document.getElementById('resHeaderInfo').innerText = `${name} • ${age} Tuổi • ${gender}`;
+            document.getElementById('resDate').innerText = new Date().toLocaleDateString('vi-VN');
+
+            // Kim BMI
+            const pointerPos = Math.min(Math.max((bmi / 40) * 100, 0), 100);
+            document.getElementById('bmiPointer').style.left = pointerPos + '%';
+
+            // Nhận xét & Phân loại
+            let status = "Bình thường";
+            let advice = "";
+            let diet = "";
+            if (bmi < 18.5) { 
+                status = "Cân nặng thấp"; 
+                advice = "Bạn cần tăng cường dinh dưỡng và tập các bài tập phát triển cơ bắp.";
+                diet = "Ưu tiên đạm động vật, ngũ cốc và các loại hạt. Chia 5 bữa/ngày.";
+            }
+            else if (bmi < 25) { 
+                status = "Cân đối"; 
+                advice = "Chỉ số rất tốt! Hãy duy trì phong độ hiện tại bằng lối sống năng động.";
+                diet = "Ăn nhiều rau xanh, hạn chế đường tinh luyện. Duy trì đủ 2L nước.";
+            }
+            else { 
+                status = "Thừa cân"; 
+                advice = "Bạn nên kiểm soát lượng calo và tăng thời gian tập Cardio hàng ngày.";
+                diet = "Tăng cường chất xơ, giảm tinh bột trắng. Ăn tối trước 19h.";
+            }
+            document.getElementById('resStatus').innerText = status;
+            document.getElementById('advGeneral').innerText = advice;
+            document.getElementById('advDiet').innerText = diet;
+
+            // Calo (TDEE)
+            const bmr = (10 * w) + (6.25 * h) - (5 * age) + (gender === "Nam" ? 5 : -161);
+            const tdee = Math.round(bmr * (1.2 + (workout / 200)));
+            document.getElementById('resCalo').innerText = tdee;
+
+            // Thành phần cơ thể (Giả lập)
+            const fat = (bmi * 1.2 + 0.23 * age - (gender === "Nam" ? 16.2 : 5.4)).toFixed(1);
+            const water = (gender === "Nam" ? 60 : 55) - (bmi * 0.4);
+            const muscle = (100 - fat - water).toFixed(1);
+            document.getElementById('resWater').innerText = water.toFixed(1);
+            document.getElementById('resFat').innerText = fat;
+            document.getElementById('resMuscle').innerText = muscle;
+
+            // Vẽ Chart
+            const ctx = document.getElementById('resChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels:['Cơ','Mỡ'], datasets:[{data:[70,30], backgroundColor:['#3b82f6','#f1f5f9'], borderWidth:0}] },
-                options: { cutout:'85%', plugins:{legend:{display:false}} }
+                data: {
+                    datasets: [{
+                        data: [water, fat, muscle],
+                        backgroundColor: ['#3b82f6', '#f97316', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { cutout: '75%', plugins: { legend: { display: false } } }
             });
-            renderHistory();
+
+            // Hiện Modal
+            document.getElementById('main-content').classList.add('blur-bg');
+            document.getElementById('result-modal').style.display = 'flex';
         }
 
-        function calculateCore() {
-            const h = document.getElementById('uHeight').value / 100;
-            const w = document.getElementById('uWeight').value;
-            if(h > 0 && w > 0) {
-                const bmi = (w/(h*h)).toFixed(1);
-                document.getElementById('valBMI').innerText = bmi;
-                const status = bmi < 18.5 ? "Gầy" : bmi < 25 ? "Ổn định" : "Thừa cân";
-                document.getElementById('valBMIText').innerText = status;
-                bodyChart.data.datasets[0].data = [bmi < 25 ? 80 : 60, bmi < 25 ? 20 : 40];
-                bodyChart.update();
-            }
+        function closeModal() {
+            document.getElementById('main-content').classList.remove('blur-bg');
+            document.getElementById('result-modal').style.display = 'none';
         }
 
-        function changeTheme(theme) {
-            const container = document.getElementById('video-container');
-            container.classList.remove('bg-gym', 'bg-medical');
-            if(theme !== 'default') container.classList.add('bg-' + theme);
-        }
-
-        async function startAI() {
-            document.getElementById('scan-line').style.display = 'block';
-            document.getElementById('btnAction').innerText = "ĐANG QUÉT...";
-            
-            const pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
-            pose.setOptions({modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5});
-            pose.onResults(onPoseResults);
-
-            const cam = new Camera(document.getElementById('input_video'), {
-                onFrame: async () => { await pose.send({image: document.getElementById('input_video')}); },
-                width: 640, height: 480
+        function downloadReport() {
+            const target = document.getElementById('capture-area');
+            html2canvas(target, { borderRadius: 40 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Bao-Cao-Suc-Khoe.png';
+                link.href = canvas.toDataURL();
+                link.click();
             });
-            cam.start();
-        }
-
-        function applyFilters() {
-            const b = document.getElementById('brightness').value;
-            const c = document.getElementById('contrast').value;
-            document.getElementById('output_canvas').style.filter = `brightness(${b}%) contrast(${c}%)`;
-        }
-
-        function onPoseResults(results) {
-            const canvas = document.getElementById('output_canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 640; canvas.height = 480;
-            ctx.save();
-            ctx.clearRect(0,0,640,480);
-            ctx.drawImage(results.image, 0,0,640,480);
-            if(results.poseLandmarks) {
-                drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#3b82f6', lineWidth: 4});
-                drawLandmarks(ctx, results.poseLandmarks, {color: '#ffffff', fillColor: '#3b82f6', lineWidth: 2, radius: 4});
-            }
-            ctx.restore();
-            
-            if(!window.doneScan) {
-                window.doneScan = true;
-                setTimeout(() => finishScan(), 3000);
-            }
-        }
-
-        function finishScan() {
-            document.getElementById('scan-line').style.display = 'none';
-            document.getElementById('idle-area').classList.add('hidden');
-            document.getElementById('result-area').classList.remove('hidden');
-            document.getElementById('btnAction').innerText = "HOÀN TẤT";
-
-            const name = document.getElementById('uName').value || "Người dùng";
-            const bmi = document.getElementById('valBMI').innerText;
-            const workout = document.getElementById('uWorkout').value;
-
-            document.getElementById('resGeneral').innerText = `${name} có khung xương cân đối. Hệ thống nhận thấy bạn tập luyện ${workout}p/ngày, đây là mức độ khá tốt.`;
-            document.getElementById('resFood').innerText = "Ưu tiên Salad ức gà, các loại hạt và nước ép cần tây.";
-            document.getElementById('resEx').innerText = "Tăng cường Plank (3 hiệp x 45s) để làm săn chắc cơ lõi.";
-            document.getElementById('resSleep').innerText = "Lý tưởng nhất là từ 22:30 đến 06:15 sáng.";
-
-            saveHistory({name, bmi, date: new Date().toLocaleTimeString()});
-        }
-
-        function saveHistory(data) {
-            historyData.unshift(data);
-            if(historyData.length > 5) historyData.pop();
-            localStorage.setItem('healthHistory', JSON.stringify(historyData));
-            renderHistory();
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('history-list');
-            list.innerHTML = historyData.map(h => `
-                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-dashed">
-                    <span class="font-bold">${h.name}</span>
-                    <span class="text-blue-500 font-black">BMI: ${h.bmi}</span>
-                    <span class="opacity-40">${h.date}</span>
-                </div>
-            `).join('');
-        }
-
-        function clearHistory() {
-            if(confirm("Xóa sạch toàn bộ lịch sử?")) {
-                localStorage.clear();
-                historyData = [];
-                renderHistory();
-            }
-        }
-
-        function takeSnapshot() {
-            const canvas = document.getElementById('output_canvas');
-            const link = document.createElement('a');
-            link.download = 'AI-Health-Report.png';
-            link.href = canvas.toDataURL();
-            link.click();
         }
     </script>
 </body>
