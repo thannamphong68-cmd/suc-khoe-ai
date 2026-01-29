@@ -1,132 +1,467 @@
-// --- KHỞI TẠO BIẾN CŨ ---
-let logs = JSON.parse(localStorage.getItem('healthy_logs')) || [];
-let radar, line, audioCtx, oscillator;
-let isAudioPlaying = false;
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Healthyai Pro - Comprehensive Health OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
+        :root { --primary: #3b82f6; --bg: #020617; --card: rgba(15, 23, 42, 0.8); --text: #f8fafc; }
+        .light-mode { --primary: #2563eb; --bg: #f8fafc; --card: rgba(255, 255, 255, 0.9); --text: #0f172a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden; }
+        .glass { background: var(--card); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); transition: transform 0.3s ease; }
+        .glass:hover { border-color: rgba(59, 130, 246, 0.4); }
+        .tab-btn.active { background: #3b82f6; color: white; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4); }
+        .hidden { display: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.3); border-radius: 10px; }
+        #snellen-char { transition: all 0.2s ease; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
+        @keyframes pulse-ring { 0% { transform: scale(.33); opacity: 1; } 80%, 100% { opacity: 0; } }
+        .status-dot { position: relative; width: 8px; height: 8px; background: #10b981; border-radius: 50%; }
+        .status-dot::after { content: ''; position: absolute; inset: -4px; border: 2px solid #10b981; border-radius: 50%; animation: pulse-ring 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite; }
+    </style>
+</head>
+<body class="dark-mode">
 
-// --- QUẢN LÝ TAB MỚI ---
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-blue-600'));
-    document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-    event.currentTarget.classList.add('active', 'bg-blue-600');
-    if(isAudioPlaying) toggleAudio(); // Tắt thính lực khi chuyển tab
-}
+    <nav class="max-w-7xl mx-auto flex justify-between items-center p-6 sticky top-0 z-50 bg-slate-950/50 backdrop-blur-md border-b border-white/5">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg"><i data-lucide="shield-check" class="text-white w-6 h-6"></i></div>
+            <h1 class="text-xl font-black tracking-tight">HEALTHYAI <span class="text-blue-500">PRO</span></h1>
+        </div>
+        <div class="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/10">
+            <button onclick="switchTab('dashboard')" class="tab-btn active px-4 py-2 rounded-xl text-xs font-bold transition-all">DASHBOARD</button>
+            <button onclick="switchTab('diet')" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all">DINH DƯỠNG</button>
+            <button onclick="switchTab('sensory')" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all">GIÁC QUAN</button>
+        </div>
+        <button onclick="toggleTheme()" class="p-2.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition"><i data-lucide="sun" id="theme-icon"></i></button>
+    </nav>
 
-// --- HÀM XỬ LÝ DỮ LIỆU (CŨ + NÂNG CẤP BMR/TDEE) ---
-function processData() {
-    const w = parseFloat(document.getElementById('weight').value);
-    const h = parseFloat(document.getElementById('height').value);
-    const age = parseInt(document.getElementById('age').value);
-    const g = document.getElementById('gender').value;
-    const act = parseFloat(document.getElementById('activity').value);
-    const name = document.getElementById('name').value || "Người dùng";
+    <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <div class="lg:col-span-4 space-y-6">
+            <div class="glass p-8 rounded-[2.5rem] border-t-4 border-blue-500">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="fingerprint" class="text-blue-500 w-5 h-5"></i>
+                        <h3 class="font-bold text-sm uppercase tracking-widest">Hồ sơ sinh trắc</h3>
+                    </div>
+                    <div class="status-dot"></div>
+                </div>
+                
+                <div class="space-y-4">
+                    <input type="text" id="name" placeholder="Họ và tên" class="w-full bg-black/30 border border-white/5 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <div class="grid grid-cols-2 gap-4">
+                        <select id="gender" class="bg-black/30 border border-white/5 rounded-2xl p-4 text-sm outline-none">
+                            <option value="male">Nam giới</option>
+                            <option value="female">Nữ giới</option>
+                        </select>
+                        <input type="number" id="age" placeholder="Tuổi" class="bg-black/30 border border-white/5 rounded-2xl p-4 text-sm outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="number" id="weight" placeholder="Cân nặng (kg)" class="bg-black/30 border border-white/5 rounded-2xl p-4 text-sm outline-none">
+                        <input type="number" id="height" placeholder="Chiều cao (cm)" class="bg-black/30 border border-white/5 rounded-2xl p-4 text-sm outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold opacity-50 uppercase ml-2">Mức độ vận động</label>
+                        <select id="activity" class="w-full bg-black/30 border border-white/5 rounded-2xl p-4 text-sm outline-none">
+                            <option value="1.2">Ít vận động (Văn phòng)</option>
+                            <option value="1.375">Vận động nhẹ (1-3 ngày/tuần)</option>
+                            <option value="1.55">Vận động vừa (3-5 ngày/tuần)</option>
+                            <option value="1.725">Vận động nặng (6-7 ngày/tuần)</option>
+                            <option value="1.9">Vận động rất nặng (Vận động viên)</option>
+                        </select>
+                    </div>
+                </div>
 
-    if(!w || !h || !age) return alert("Hệ thống yêu cầu đủ dữ liệu!");
+                <button onclick="processData()" class="w-full mt-8 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xl shadow-blue-500/20">
+                    <i data-lucide="zap" class="w-4 h-4"></i> CẬP NHẬT CHỈ SỐ
+                </button>
+            </div>
 
-    // Tính toán chuyên sâu
-    const bmi = (w / ((h/100)**2)).toFixed(1);
-    const bmr = (g === 'male') ? (10 * w) + (6.25 * h) - (5 * age) + 5 : (10 * w) + (6.25 * h) - (5 * age) - 161;
-    const tdee = Math.round(bmr * act);
-    const ideal = (g === 'male') ? (h - 100) * 0.9 : (h - 100) * 0.85;
-    const bf = Math.abs((1.2 * bmi) + (0.23 * age) - 16.2).toFixed(1);
+            <div id="smart-tip" class="glass p-6 rounded-[2rem] border-l-4 border-orange-500">
+                <div class="flex gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
+                        <i data-lucide="lightbulb" class="text-orange-500 w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-[10px] font-black text-orange-500 uppercase">AI Insight</h5>
+                        <p id="tip-text" class="text-xs mt-1 text-slate-300 leading-relaxed">Nhập dữ liệu để nhận lời khuyên sức khỏe cá nhân hóa từ AI.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    // Cập nhật UI Dashboard
-    document.getElementById('res-bmi').innerText = bmi;
-    document.getElementById('res-bmr').innerText = Math.round(bmr);
-    document.getElementById('res-ideal').innerText = ideal.toFixed(0) + "kg";
-    document.getElementById('res-fat').innerText = bf;
-    document.getElementById('target-cal').innerText = tdee;
+        <div class="lg:col-span-8 space-y-6">
+            
+            <div id="tab-dashboard" class="tab-content space-y-6 animate-in fade-in duration-500">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass p-5 rounded-3xl border-b-4 border-blue-500">
+                        <p class="text-[10px] font-bold opacity-50 uppercase mb-1">BMI Index</p>
+                        <div id="res-bmi" class="text-3xl font-black italic">--</div>
+                    </div>
+                    <div class="glass p-5 rounded-3xl border-b-4 border-emerald-500">
+                        <p class="text-[10px] font-bold opacity-50 uppercase mb-1">BMR (kcal)</p>
+                        <div id="res-bmr" class="text-3xl font-black italic">--</div>
+                    </div>
+                    <div class="glass p-5 rounded-3xl border-b-4 border-purple-500">
+                        <p class="text-[10px] font-bold opacity-50 uppercase mb-1">TDEE (kcal)</p>
+                        <div id="res-tdee" class="text-3xl font-black italic">--</div>
+                    </div>
+                    <div class="glass p-5 rounded-3xl border-b-4 border-pink-500">
+                        <p class="text-[10px] font-bold opacity-50 uppercase mb-1">Body Fat %</p>
+                        <div id="res-fat" class="text-3xl font-black italic">--</div>
+                    </div>
+                </div>
 
-    // Biểu đồ & Lịch sử
-    updateCharts(bmi, bf, age);
-    saveLog(name, bmi);
-    showSmartTip(bmi);
-    generateAISuggestions(name, age, bmi, g, tdee);
-}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass p-6 rounded-[2.5rem] h-80">
+                        <h4 class="text-[10px] font-bold uppercase opacity-50 mb-4 flex items-center gap-2"><i data-lucide="radar" class="w-3 h-3"></i> Biểu đồ Radar Sức khỏe</h4>
+                        <div class="h-56"><canvas id="radarChart"></canvas></div>
+                    </div>
+                    <div class="glass p-6 rounded-[2.5rem] h-80">
+                        <h4 class="text-[10px] font-bold uppercase opacity-50 mb-4 flex items-center gap-2"><i data-lucide="line-chart" class="w-3 h-3"></i> Xu hướng cân nặng</h4>
+                        <div class="h-56"><canvas id="lineChart"></canvas></div>
+                    </div>
+                </div>
 
-// --- BIỂU ĐỒ (CŨ) ---
-function updateCharts(bmi, bf, age) {
-    radar.data.datasets[0].data = [bmi, 20, age, bf, 25];
-    radar.update();
-    
-    const t = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    line.data.labels.push(t);
-    line.data.datasets[0].data.push(bmi);
-    if(line.data.labels.length > 8) { line.data.labels.shift(); line.data.datasets[0].data.shift(); }
-    line.update();
-}
+                <div class="glass p-6 rounded-[2.5rem]">
+                    <div class="flex items-center justify-between mb-4 px-2">
+                        <h4 class="text-[10px] font-bold uppercase opacity-50 flex items-center gap-2"><i data-lucide="clock" class="w-3 h-3"></i> Nhật ký đo gần nhất</h4>
+                        <button onclick="resetData()" class="text-[10px] font-bold text-red-500 opacity-50 hover:opacity-100 uppercase">Xóa hết</button>
+                    </div>
+                    <div id="history-box" class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+                        </div>
+                </div>
+            </div>
 
-// --- MODULE THỊ LỰC (MỚI) ---
-const snellen = [{l:"20/200", s:100}, {l:"20/100", s:70}, {l:"20/70", s:50}, {l:"20/50", s:35}, {l:"20/20", s:12}];
-let currentS = 0;
-function stepVision(dir) {
-    currentS = Math.max(0, Math.min(snellen.length - 1, currentS + dir));
-    const stage = snellen[currentS];
-    document.getElementById('snellen-char').style.fontSize = stage.s + "px";
-    document.getElementById('vision-val').innerText = stage.l;
-    document.getElementById('snellen-char').innerText = "EFPTOZ"[Math.floor(Math.random()*6)];
-}
+            <div id="tab-diet" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-1 space-y-4">
+                        <div class="glass p-6 rounded-[2rem]">
+                            <h4 class="font-bold text-sm mb-4 uppercase text-blue-400">Thêm bữa ăn</h4>
+                            <div class="space-y-3">
+                                <input type="text" id="food-input" placeholder="Tên món ăn..." class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs outline-none">
+                                <input type="number" id="cal-input" placeholder="Calories (kcal)..." class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs outline-none">
+                                <button onclick="addFood()" class="w-full bg-blue-600 p-3 rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-500/20">Thêm vào</button>
+                            </div>
+                        </div>
+                        <div class="glass p-6 rounded-[2rem] bg-gradient-to-br from-blue-600/20 to-transparent">
+                            <p class="text-[10px] font-black opacity-60 uppercase mb-2">Mục tiêu hằng ngày</p>
+                            <div class="text-4xl font-black" id="target-cal">2000</div>
+                            <p class="text-[10px] mt-2 opacity-40">kcal (Dựa trên TDEE)</p>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2 glass p-6 rounded-[2.5rem] flex flex-col">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="font-bold uppercase text-xs tracking-widest flex items-center gap-2"><i data-lucide="utensils" class="text-orange-500 w-4 h-4"></i> Thực đơn trong ngày</h4>
+                            <div class="text-right">
+                                <span class="text-2xl font-black text-orange-400" id="consumed-cal">0</span>
+                                <span class="text-xs opacity-40">/ kcal</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-6">
+                            <div id="diet-progress" class="h-full bg-orange-500 w-0 transition-all duration-500"></div>
+                        </div>
+                        <div id="diet-log" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
+                            <div class="text-center py-10 opacity-20 italic text-sm">Chưa có dữ liệu ăn uống hôm nay</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-// --- MODULE THÍNH LỰC (MỚI) ---
-function toggleAudio() {
-    const btn = document.getElementById('audio-btn');
-    if(!isAudioPlaying) {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        oscillator = audioCtx.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(document.getElementById('freq-range').value, audioCtx.currentTime);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // Volume 5% cho an toàn
-        oscillator.connect(gain); gain.connect(audioCtx.destination);
-        oscillator.start();
-        btn.innerHTML = '<i data-lucide="square"></i> Dừng';
-        isAudioPlaying = true;
-    } else {
-        oscillator.stop();
-        btn.innerHTML = '<i data-lucide="play"></i> Phát âm thanh';
-        isAudioPlaying = false;
-    }
-    lucide.createIcons();
-}
+            <div id="tab-sensory" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass p-8 rounded-[2.5rem] text-center">
+                        <h4 class="font-bold uppercase text-xs mb-8 flex items-center justify-center gap-2"><i data-lucide="eye" class="text-emerald-500 w-4 h-4"></i> Kiểm tra thị lực (Snellen)</h4>
+                        <div class="bg-white text-black h-48 w-full rounded-2xl flex items-center justify-center mb-6 overflow-hidden">
+                            <span id="snellen-char" class="font-serif font-bold">E</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 mb-6">
+                            <button onclick="stepVision(-1)" class="p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10"><i data-lucide="minus"></i></button>
+                            <div class="text-center">
+                                <p class="text-2xl font-black" id="vision-val">20/200</p>
+                                <p class="text-[10px] opacity-40 uppercase font-bold">Thị lực ước tính</p>
+                            </div>
+                            <button onclick="stepVision(1)" class="p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10"><i data-lucide="plus"></i></button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic">Cách 60cm. Nếu không thấy rõ chữ cái, hãy nhấn dấu (-) cho đến khi thấy.</p>
+                    </div>
 
-document.getElementById('freq-range').oninput = (e) => {
-    document.getElementById('freq-display').innerHTML = `${e.target.value}<span class="text-xl ml-2 opacity-40">Hz</span>`;
-    if(isAudioPlaying) oscillator.frequency.setValueAtTime(e.target.value, audioCtx.currentTime);
-};
+                    <div class="glass p-8 rounded-[2.5rem] text-center">
+                        <h4 class="font-bold uppercase text-xs mb-8 flex items-center justify-center gap-2"><i data-lucide="ear" class="text-blue-500 w-4 h-4"></i> Kiểm tra thính lực (Tần số)</h4>
+                        <div class="mb-10 pt-10">
+                            <div id="freq-display" class="text-6xl font-black text-blue-500 mb-2">440<span class="text-xl ml-2 opacity-40 italic font-normal">Hz</span></div>
+                            <p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">Tần số hiện tại</p>
+                        </div>
+                        <input type="range" id="freq-range" min="20" max="18000" value="440" class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-8">
+                        <button id="audio-btn" onclick="toggleAudio()" class="w-full bg-white text-black py-4 rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-2 transition hover:bg-blue-50">
+                            <i data-lucide="play" class="w-4 h-4"></i> Phát âm thanh thử nghiệm
+                        </button>
+                        <p class="text-[10px] text-red-400 mt-4 font-bold uppercase italic">⚠️ Lưu ý: Giảm âm lượng thiết bị xuống mức thấp trước khi phát!</p>
+                    </div>
+                </div>
+            </div>
 
-// --- MODULE DINH DƯỠNG (MỚI) ---
-let consumed = 0;
-function addFood() {
-    const name = document.getElementById('food-input').value;
-    const cal = parseInt(document.getElementById('cal-input').value);
-    const target = parseInt(document.getElementById('target-cal').innerText) || 2000;
-    if(!name || !cal) return;
+        </div>
+    </main>
 
-    consumed += cal;
-    const item = document.createElement('div');
-    item.className = "flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5";
-    item.innerHTML = `<span>${name}</span><span class="font-black text-orange-400">${cal} kcal</span>`;
-    document.getElementById('diet-log').prepend(item);
-    
-    document.getElementById('consumed-cal').innerText = consumed;
-    document.getElementById('diet-progress').style.width = Math.min(100, (consumed/target)*100) + "%";
-}
+    <div id="ai-chat-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/95 backdrop-blur-2xl">
+        <div class="glass max-w-4xl w-full rounded-[3rem] overflow-hidden flex flex-col border-white/10 shadow-2xl">
+            <div class="p-8 border-b border-white/5 flex justify-between items-center bg-blue-600/10">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg"><i data-lucide="cpu" class="text-white w-8 h-8"></i></div>
+                    <div>
+                        <h3 class="font-black text-xl tracking-tight uppercase">AI Health Consultant</h3>
+                        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Neural Analysis Engine v7.4</p>
+                    </div>
+                </div>
+                <button onclick="closeAI()" class="p-3 hover:bg-white/10 rounded-full transition"><i data-lucide="x"></i></button>
+            </div>
+            <div id="ai-chat-content" class="p-10 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar"></div>
+            <div class="p-8 bg-black/40 flex gap-4">
+                <button onclick="downloadReport()" class="flex-1 bg-white/5 py-4 rounded-2xl text-[10px] font-black uppercase border border-white/10 hover:bg-white/20 transition flex items-center justify-center gap-2"><i data-lucide="download" class="w-4 h-4"></i> Xuất file ảnh</button>
+                <button onclick="closeAI()" class="flex-1 bg-blue-600 py-4 rounded-2xl text-[10px] font-black uppercase hover:bg-blue-500 transition shadow-lg shadow-blue-500/30">Hoàn tất phân tích</button>
+            </div>
+        </div>
+    </div>
 
-// --- KHỞI TẠO BIỂU ĐỒ (CŨ) ---
-window.onload = function() {
-    lucide.createIcons();
-    const rCtx = document.getElementById('radarChart').getContext('2d');
-    radar = new Chart(rCtx, {
-        type: 'radar',
-        data: { labels: ['BMI', 'Nước', 'Tuổi', 'Mỡ %', 'Cân đối'], datasets: [{ data: [0,0,0,0,0], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)' }] },
-        options: { plugins: { legend: { display: false } }, scales: { r: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false } } } }
-    });
+    <script>
+        // --- DATA & STATE ---
+        let logs = JSON.parse(localStorage.getItem('healthy_logs')) || [];
+        let radar, line, audioCtx, oscillator;
+        let isAudioPlaying = false;
+        let consumed = 0;
+        const snellen = [{l:"20/200", s:100}, {l:"20/100", s:70}, {l:"20/70", s:50}, {l:"20/50", s:35}, {l:"20/20", s:12}];
+        let currentS = 0;
 
-    const lCtx = document.getElementById('lineChart').getContext('2d');
-    line = new Chart(lCtx, {
-        type: 'line',
-        data: { labels: [], datasets: [{ label: 'BMI', data: [], borderColor: '#818cf8', tension: 0.4 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
-    });
-    renderHistory();
-};
+        // --- TAB MANAGEMENT ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+            if(isAudioPlaying) toggleAudio();
+        }
+
+        // --- CALCULATION CORE ---
+        function processData() {
+            const w = parseFloat(document.getElementById('weight').value);
+            const h = parseFloat(document.getElementById('height').value);
+            const age = parseInt(document.getElementById('age').value);
+            const g = document.getElementById('gender').value;
+            const act = parseFloat(document.getElementById('activity').value);
+            const name = document.getElementById('name').value || "Người dùng";
+
+            if(!w || !h || !age) return alert("Vui lòng nhập đủ các thông số cơ bản!");
+
+            // BMI, BMR, TDEE Formulas
+            const bmi = (w / ((h/100)**2)).toFixed(1);
+            const bmr = (g === 'male') ? (10 * w) + (6.25 * h) - (5 * age) + 5 : (10 * w) + (6.25 * h) - (5 * age) - 161;
+            const tdee = Math.round(bmr * act);
+            const bf = Math.abs((1.2 * bmi) + (0.23 * age) - 16.2).toFixed(1);
+
+            // Update Dashboard
+            document.getElementById('res-bmi').innerText = bmi;
+            document.getElementById('res-bmr').innerText = Math.round(bmr);
+            document.getElementById('res-tdee').innerText = tdee;
+            document.getElementById('res-fat').innerText = bf + "%";
+            document.getElementById('target-cal').innerText = tdee;
+
+            // Visual Updates
+            updateCharts(bmi, age, bf);
+            saveLog(name, bmi);
+            showSmartTip(bmi);
+            generateAISuggestions(name, age, bmi, g, tdee);
+        }
+
+        // --- CHARTS ---
+        function updateCharts(bmi, age, bf) {
+            radar.data.datasets[0].data = [bmi, 20, age, bf, 25];
+            radar.update();
+            
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            if(line.data.labels.length > 7) { line.data.labels.shift(); line.data.datasets[0].data.shift(); }
+            line.data.labels.push(time);
+            line.data.datasets[0].data.push(bmi);
+            line.update();
+        }
+
+        // --- DIET SYSTEM ---
+        function addFood() {
+            const food = document.getElementById('food-input').value;
+            const cal = parseInt(document.getElementById('cal-input').value);
+            const target = parseInt(document.getElementById('target-cal').innerText) || 2000;
+            if(!food || !cal) return;
+
+            consumed += cal;
+            const log = document.getElementById('diet-log');
+            if(consumed === cal) log.innerHTML = ""; // Clear empty state
+            
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 animate-in slide-in-from-right duration-300";
+            div.innerHTML = `<span class="text-xs font-bold">${food}</span><span class="text-xs font-black text-orange-400">+${cal} kcal</span>`;
+            log.prepend(div);
+
+            document.getElementById('consumed-cal').innerText = consumed;
+            document.getElementById('diet-progress').style.width = Math.min(100, (consumed/target)*100) + "%";
+            document.getElementById('food-input').value = "";
+            document.getElementById('cal-input').value = "";
+        }
+
+        // --- SENSORY TESTS ---
+        function stepVision(dir) {
+            currentS = Math.max(0, Math.min(snellen.length - 1, currentS + dir));
+            const stage = snellen[currentS];
+            const el = document.getElementById('snellen-char');
+            el.style.fontSize = stage.s + "px";
+            el.innerText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random()*26)];
+            document.getElementById('vision-val').innerText = stage.l;
+        }
+
+        function toggleAudio() {
+            const btn = document.getElementById('audio-btn');
+            if(!isAudioPlaying) {
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                oscillator = audioCtx.createOscillator();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(document.getElementById('freq-range').value, audioCtx.currentTime);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                oscillator.connect(gain); gain.connect(audioCtx.destination);
+                oscillator.start();
+                btn.classList.add('bg-red-500', 'text-white');
+                btn.innerHTML = '<i data-lucide="square"></i> Dừng âm thanh';
+                isAudioPlaying = true;
+            } else {
+                oscillator.stop();
+                btn.classList.remove('bg-red-500', 'text-white');
+                btn.innerHTML = '<i data-lucide="play"></i> Phát âm thanh thử nghiệm';
+                isAudioPlaying = false;
+            }
+            lucide.createIcons();
+        }
+
+        document.getElementById('freq-range').oninput = (e) => {
+            document.getElementById('freq-display').innerHTML = `${e.target.value}<span class="text-xl ml-2 opacity-40 font-normal italic">Hz</span>`;
+            if(isAudioPlaying) oscillator.frequency.setValueAtTime(e.target.value, audioCtx.currentTime);
+        };
+
+        // --- AI & LOGGING ---
+        function saveLog(name, bmi) {
+            const t = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            logs.push({t, n: name, b: bmi});
+            if(logs.length > 10) logs.shift();
+            localStorage.setItem('healthy_logs', JSON.stringify(logs));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const box = document.getElementById('history-box');
+            box.innerHTML = logs.slice().reverse().map(l => `
+                <div class="flex-shrink-0 p-5 glass rounded-3xl min-w-[140px] text-center border-white/5">
+                    <p class="text-[8px] font-black opacity-30 uppercase">${l.t}</p>
+                    <p class="text-xs font-bold text-blue-400 truncate mb-1">${l.n}</p>
+                    <p class="text-2xl font-black">${l.b}</p>
+                    <p class="text-[8px] opacity-40">BMI</p>
+                </div>
+            `).join('');
+        }
+
+        function showSmartTip(bmi) {
+            const text = document.getElementById('tip-text');
+            if(bmi > 25) text.innerText = "Chỉ số BMI cao. Nên ưu tiên Protein và chất xơ, giảm 20% lượng Carbs trong mỗi bữa ăn.";
+            else if(bmi < 18.5) text.innerText = "Cơ thể đang thiếu cân. AI khuyên bạn bổ sung các loại hạt và chất béo tốt (Omega-3).";
+            else text.innerText = "Trạng thái lý tưởng. Hãy duy trì thói quen uống 1 ly nước ấm ngay khi thức dậy.";
+        }
+
+        function generateAISuggestions(name, age, bmi, gender, tdee) {
+            const modal = document.getElementById('ai-chat-modal');
+            const content = document.getElementById('ai-chat-content');
+            modal.style.display = 'flex';
+
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="p-6 bg-blue-600/10 border border-blue-500/20 rounded-[2rem]">
+                        <h4 class="text-blue-400 font-bold text-xs uppercase mb-2 flex items-center gap-2"><i data-lucide="activity"></i> Chẩn đoán sinh học</h4>
+                        <p class="text-sm leading-relaxed opacity-90">Chào <b>${name}</b>, ở độ tuổi <b>${age}</b>, cơ thể bạn cần khoảng <b>${tdee} kcal</b> mỗi ngày để duy trì. Dựa trên BMI <b>${bmi}</b>, bạn thuộc nhóm <b>${bmi > 25 ? 'Cần kiểm soát cân nặng' : 'Khỏe mạnh/Cần bồi bổ'}</b>. ${age < 20 ? 'Giai đoạn này cần chú ý đến chiều cao và canxi.' : 'Giai đoạn này cần chú ý đến tim mạch và trao đổi chất.'}</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-5 bg-white/5 rounded-3xl border border-white/5">
+                            <span class="text-[10px] font-black uppercase text-emerald-400">Sáng</span>
+                            <p class="text-xs mt-2 opacity-70">Phở gà/Trứng ốp la + 1 quả chuối. Ưu tiên đạm để khởi động não bộ.</p>
+                        </div>
+                        <div class="p-5 bg-white/5 rounded-3xl border border-white/5">
+                            <span class="text-[10px] font-black uppercase text-orange-400">Trưa</span>
+                            <p class="text-xs mt-2 opacity-70">1.5 bát cơm, cá thu kho/ức gà xào, nhiều rau xanh đậm màu.</p>
+                        </div>
+                        <div class="p-5 bg-white/5 rounded-3xl border border-white/5">
+                            <span class="text-[10px] font-black uppercase text-purple-400">Chiều/Tối</span>
+                            <p class="text-xs mt-2 opacity-70">Salad trộn, súp ngô hoặc khoai lang luộc. Hạn chế tinh bột sau 19h.</p>
+                        </div>
+                    </div>
+                    <div class="p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] flex flex-col md:flex-row gap-6 justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <i data-lucide="moon" class="text-indigo-400"></i>
+                            <div><p class="text-[10px] opacity-50 uppercase">Giờ ngủ vàng</p><p class="font-black">22:30 - 06:30</p></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <i data-lucide="dumbbell" class="text-blue-400"></i>
+                            <div><p class="text-[10px] opacity-50 uppercase">Tập luyện khuyên dùng</p><p class="font-black">30-45 phút Cardio</p></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // --- UTILS ---
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isL = document.body.classList.contains('light-mode');
+            document.getElementById('theme-icon').setAttribute('data-lucide', isL ? 'moon' : 'sun');
+            lucide.createIcons();
+        }
+
+        function closeAI() { document.getElementById('ai-chat-modal').style.display = 'none'; }
+        
+        function resetData() {
+            if(confirm("Xóa toàn bộ lịch sử đo?")) {
+                localStorage.removeItem('healthy_logs');
+                location.reload();
+            }
+        }
+
+        function downloadReport() {
+            html2canvas(document.body).then(canvas => {
+                const a = document.createElement('a');
+                a.download = 'Healthyai-Report.png';
+                a.href = canvas.toDataURL();
+                a.click();
+            });
+        }
+
+        // --- INIT ---
+        window.onload = function() {
+            lucide.createIcons();
+            const rCtx = document.getElementById('radarChart').getContext('2d');
+            radar = new Chart(rCtx, {
+                type: 'radar',
+                data: { labels: ['BMI', 'Hydration', 'Age', 'Fat %', 'Balance'], datasets: [{ data: [0,0,0,0,0], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)', pointRadius: 0 }] },
+                options: { scales: { r: { grid: { color: 'rgba(255,255,255,0.05)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, ticks: { display: false } } }, plugins: { legend: { display: false } } }
+            });
+
+            const lCtx = document.getElementById('lineChart').getContext('2d');
+            line = new Chart(lCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'BMI', data: [], borderColor: '#3b82f6', tension: 0.4, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.05)' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { font: { size: 8 } }, grid: { display: false } }, y: { display: false } }, plugins: { legend: { display: false } } }
+            });
+            renderHistory();
+        };
+    </script>
+</body>
+</html>
