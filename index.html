@@ -3,94 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Healthyai Pro v3.0 - Future Health OS</title>
+    <title>Healthyai Pro - Next-Gen Health OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
+        
         :root { --primary: #3b82f6; --bg: #020617; --card: rgba(15, 23, 42, 0.7); --text: #f8fafc; }
         .light-mode { --primary: #2563eb; --bg: #f1f5f9; --card: rgba(255, 255, 255, 0.8); --text: #0f172a; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); transition: 0.4s; overflow-x: hidden; padding-bottom: 80px; }
-        .glass { border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(16px); background: var(--card); }
-        .tab-btn.active { background: #3b82f6; color: white; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4); }
-        #splash-screen { position: fixed; inset: 0; z-index: 1000; background: #020617; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s opacity ease; }
-        .water-wave { position: relative; overflow: hidden; background: rgba(59, 130, 246, 0.1); }
-        .water-wave::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: var(--p, 0%); background: #3b82f6; transition: 1s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0.6; }
+
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); transition: background 0.5s ease; overflow-x: hidden; }
+        
+        /* Hiệu ứng Glassmorphism */
+        .glass { backdrop-filter: blur(24px) saturate(180%); background: var(--card); border: 1px solid rgba(255,255,255,0.08); }
+        .dark-mode .glass { box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
+        
+        /* Intro Loader */
+        #loader { position: fixed; inset: 0; z-index: 9999; background: #020617; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* Animation & UI */
+        .tab-btn.active { background: var(--primary); color: white; transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.5); }
+        .pulse-blue { animation: pulse-blue 2s infinite; }
+        @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        
+        input, select { background: rgba(0,0,0,0.2) !important; border: 1px solid rgba(255,255,255,0.05) !important; }
+        .light-mode input, .light-mode select { background: rgba(255,255,255,0.5) !important; border: 1px solid rgba(0,0,0,0.05) !important; }
     </style>
 </head>
 <body class="dark-mode">
 
-    <div id="splash-screen">
-        <div class="text-center space-y-4">
-            <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center animate-bounce shadow-2xl shadow-blue-500/50">
-                <i data-lucide="activity" class="text-white w-8 h-8"></i>
-            </div>
-            <p id="proverb" class="text-blue-300 italic text-sm px-6 transition-opacity opacity-0"></p>
-            <div class="w-32 h-1 bg-white/10 mx-auto rounded-full overflow-hidden">
-                <div id="loader" class="h-full bg-blue-500 w-0 transition-all duration-[1500ms]"></div>
-            </div>
+    <div id="loader">
+        <div class="relative">
+            <div class="w-20 h-20 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+            <i data-lucide="shield-check" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-500 w-8 h-8"></i>
         </div>
+        <h2 class="mt-6 font-black tracking-[0.3em] text-white animate-pulse">HEALTHYAI PRO</h2>
+        <p class="text-[10px] text-blue-400 mt-2 font-bold uppercase tracking-widest">Initializing Neural OS...</p>
     </div>
 
-    <nav class="max-w-7xl mx-auto flex justify-between items-center p-6 sticky top-0 z-50 bg-slate-950/20 backdrop-blur-md border-b border-white/5">
-        <div class="flex items-center gap-3">
-            <div class="p-2 bg-blue-600 rounded-lg"><i data-lucide="zap" class="text-white w-5 h-5"></i></div>
-            <h1 class="text-lg font-black tracking-tighter">HEALTHYAI <span class="text-blue-500 text-xs">OS 3.0</span></h1>
+    <nav class="max-w-7xl mx-auto flex justify-between items-center p-6 sticky top-0 z-50 backdrop-blur-xl border-b border-white/5">
+        <div class="flex items-center gap-3 group cursor-pointer">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
+                <i data-lucide="zap" class="text-white w-6 h-6 fill-current"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black tracking-tight leading-none">HEALTHYAI <span class="text-blue-500">PRO</span></h1>
+                <p id="greeting" class="text-[9px] font-bold opacity-50 uppercase mt-1">Hệ thống đang sẵn sàng</p>
+            </div>
         </div>
-        <div class="flex gap-2">
-            <button onclick="toggleTheme()" class="p-2 bg-white/5 rounded-lg border border-white/10"><i data-lucide="sun" id="theme-icon"></i></button>
+        
+        <div class="hidden md:flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
+            <button onclick="switchTab('dashboard')" class="tab-btn active px-6 py-2.5 rounded-xl text-[10px] font-black transition-all">DASHBOARD</button>
+            <button onclick="switchTab('diet')" class="tab-btn px-6 py-2.5 rounded-xl text-[10px] font-black transition-all">NUTRITION</button>
+            <button onclick="switchTab('sensory')" class="tab-btn px-6 py-2.5 rounded-xl text-[10px] font-black transition-all">SENSORY</button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="hidden sm:block text-right mr-2">
+                <p class="text-[10px] font-bold opacity-40 uppercase">Bio-Score</p>
+                <p id="bio-score" class="font-black text-blue-500 text-lg">--</p>
+            </div>
+            <button onclick="toggleTheme()" class="p-3 bg-white/5 rounded-2xl border border-white/10 hover:scale-110 transition active:scale-95">
+                <i data-lucide="sun" id="theme-icon" class="w-5 h-5"></i>
+            </button>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
         
         <div class="lg:col-span-4 space-y-6">
-            <div class="glass p-6 rounded-[2rem] border-t-2 border-blue-500">
-                <h3 class="text-[10px] font-black uppercase opacity-40 mb-4 tracking-widest flex items-center gap-2">
-                    <i data-lucide="fingerprint" class="w-4 h-4"></i> Hồ sơ sinh học
-                </h3>
-                <div class="space-y-3">
-                    <input type="text" id="name" placeholder="Họ và tên" class="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-sm outline-none">
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="number" id="age" placeholder="Tuổi" class="bg-black/20 border border-white/5 rounded-xl p-3 text-sm outline-none">
-                        <select id="gender" class="bg-black/20 border border-white/5 rounded-xl p-3 text-sm outline-none">
-                            <option value="male">Nam</option>
-                            <option value="female">Nữ</option>
+            <div class="glass p-8 rounded-[3rem] border-t-4 border-blue-600 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-5">
+                    <i data-lucide="fingerprint" class="w-32 h-32"></i>
+                </div>
+                
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+                    <h3 class="font-black text-lg uppercase tracking-tighter">Sinh trắc học</h3>
+                </div>
+                
+                <div class="space-y-5 relative z-10">
+                    <div class="group">
+                        <label class="text-[10px] font-black opacity-40 ml-4 mb-2 block uppercase">Danh tính</label>
+                        <input type="text" id="name" placeholder="Họ và tên..." class="w-full rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition group-hover:border-blue-500/30">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-black opacity-40 ml-4 mb-2 block uppercase">Giới tính</label>
+                            <select id="gender" class="w-full rounded-2xl p-4 text-sm outline-none appearance-none">
+                                <option value="male">Nam giới</option>
+                                <option value="female">Nữ giới</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black opacity-40 ml-4 mb-2 block uppercase">Tuổi</label>
+                            <input type="number" id="age" placeholder="--" class="w-full rounded-2xl p-4 text-sm outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-black opacity-40 ml-4 mb-2 block uppercase">Cân nặng (kg)</label>
+                            <input type="number" id="weight" placeholder="00" class="w-full rounded-2xl p-4 text-sm outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black opacity-40 ml-4 mb-2 block uppercase">Chiều cao (cm)</label>
+                            <input type="number" id="height" placeholder="000" class="w-full rounded-2xl p-4 text-sm outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-black opacity-40 ml-4 mb-2 block uppercase">Cường độ vận động</label>
+                        <select id="activity" class="w-full rounded-2xl p-4 text-sm outline-none appearance-none">
+                            <option value="1.2">Ít vận động (Văn phòng)</option>
+                            <option value="1.375">Nhẹ (1-3 ngày/tuần)</option>
+                            <option value="1.55">Vừa (3-5 ngày/tuần)</option>
+                            <option value="1.725">Nặng (6-7 ngày/tuần)</option>
+                            <option value="1.9">Vận động viên</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="number" id="weight" placeholder="Kg" class="bg-black/20 border border-white/5 rounded-xl p-3 text-sm outline-none">
-                        <input type="number" id="height" placeholder="Cm" class="bg-black/20 border border-white/5 rounded-xl p-3 text-sm outline-none">
-                    </div>
-                    <button onclick="processData()" class="w-full bg-blue-600 py-3 rounded-xl font-bold text-xs uppercase shadow-lg shadow-blue-500/20 transition hover:bg-blue-500">Cập nhật chỉ số</button>
                 </div>
+
+                <button onclick="processData()" class="w-full mt-10 bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-blue-500/25 pulse-blue">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Phân tích chỉ số
+                </button>
             </div>
 
-            <div class="glass p-6 rounded-[2rem] water-wave" id="water-card">
-                <div class="relative z-10 flex items-center justify-between">
+            <div id="smart-tip" class="glass p-6 rounded-[2.5rem] border-l-4 border-orange-500 transform hover:scale-[1.02] transition">
+                <div class="flex gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center shrink-0">
+                        <i data-lucide="brain-circuit" class="text-orange-500 w-6 h-6"></i>
+                    </div>
                     <div>
-                        <h4 class="text-xs font-black uppercase opacity-60">Nước uống</h4>
-                        <div class="text-2xl font-black mt-1"><span id="water-count">0</span>/2500<span class="text-xs ml-1">ml</span></div>
+                        <h5 class="text-[10px] font-black text-orange-500 uppercase tracking-widest">AI Core Engine</h5>
+                        <p id="tip-text" class="text-xs mt-1.5 text-slate-400 leading-relaxed font-medium">Hệ thống đang chờ dữ liệu đầu vào để bắt đầu quá trình mô phỏng sức khỏe.</p>
                     </div>
-                    <button onclick="addWater()" class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition active:scale-90">
-                        <i data-lucide="plus" class="text-white"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="glass p-6 rounded-[2rem]">
-                <h4 class="text-[10px] font-black uppercase opacity-40 mb-4">Dự đoán triệu chứng</h4>
-                <div class="space-y-2">
-                    <select id="symptom-select" class="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-sm outline-none">
-                        <option value="">Chọn triệu chứng cơ bản...</option>
-                        <option value="headache">Đau đầu, chóng mặt</option>
-                        <option value="fever">Sốt, nóng người</option>
-                        <option value="cough">Ho, đau họng</option>
-                        <option value="stomach">Đau bụng, khó tiêu</option>
-                        <option value="fatigue">Mệt mỏi, uể oải</option>
-                    </select>
-                    <button onclick="checkSymptoms()" class="w-full bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-600 hover:text-white transition">Chẩn đoán nhanh</button>
                 </div>
             </div>
         </div>
@@ -99,254 +153,448 @@
             
             <div id="tab-dashboard" class="tab-content space-y-6">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="glass p-5 rounded-3xl border-b-4 border-blue-500">
-                        <p class="text-[10px] font-bold opacity-40 uppercase">BMI</p>
-                        <div id="res-bmi" class="text-2xl font-black">--</div>
+                    <div class="glass p-6 rounded-[2rem] border-b-4 border-blue-500 group">
+                        <p class="text-[9px] font-black opacity-40 uppercase mb-2">BMI Index</p>
+                        <div id="res-bmi" class="text-3xl font-black italic group-hover:text-blue-500 transition">--</div>
                     </div>
-                    <div class="glass p-5 rounded-3xl border-b-4 border-emerald-500">
-                        <p class="text-[10px] font-bold opacity-40 uppercase">Calo/Ngày</p>
-                        <div id="res-tdee" class="text-2xl font-black">--</div>
+                    <div class="glass p-6 rounded-[2rem] border-b-4 border-emerald-500 group">
+                        <p class="text-[9px] font-black opacity-40 uppercase mb-2">BMR (kcal)</p>
+                        <div id="res-bmr" class="text-3xl font-black italic group-hover:text-emerald-500 transition">--</div>
                     </div>
-                    <div class="glass p-5 rounded-3xl border-b-4 border-orange-500">
-                        <p class="text-[10px] font-bold opacity-40 uppercase">Nước/Ngày</p>
-                        <div id="res-water-target" class="text-2xl font-black">--</div>
+                    <div class="glass p-6 rounded-[2rem] border-b-4 border-purple-500 group">
+                        <p class="text-[9px] font-black opacity-40 uppercase mb-2">TDEE (kcal)</p>
+                        <div id="res-tdee" class="text-3xl font-black italic group-hover:text-purple-500 transition">--</div>
                     </div>
-                    <div class="glass p-5 rounded-3xl border-b-4 border-purple-500">
-                        <p class="text-[10px] font-bold opacity-40 uppercase">Tình trạng</p>
-                        <div id="res-status" class="text-[10px] font-black text-blue-400 mt-2 uppercase italic leading-tight">Chờ dữ liệu...</div>
+                    <div class="glass p-6 rounded-[2rem] border-b-4 border-pink-500 group">
+                        <p class="text-[9px] font-black opacity-40 uppercase mb-2">Body Fat %</p>
+                        <div id="res-fat" class="text-3xl font-black italic group-hover:text-pink-500 transition">--</div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="glass p-6 rounded-[2.5rem]">
-                        <canvas id="radarChart" class="max-h-60"></canvas>
+                    <div class="glass p-8 rounded-[3rem] h-96 relative overflow-hidden">
+                        <h4 class="text-[10px] font-black uppercase opacity-40 mb-6 flex items-center gap-2 tracking-widest">
+                            <i data-lucide="radar" class="w-4 h-4 text-blue-500"></i> Phân tích đa chiều
+                        </h4>
+                        <div class="h-64"><canvas id="radarChart"></canvas></div>
                     </div>
-                    <div class="glass p-6 rounded-[2.5rem]">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-[10px] font-black uppercase opacity-40">Lịch sử đo</h4>
-                            <button onclick="clearHistory()" class="text-[8px] text-red-500 font-black uppercase">Xóa hết</button>
-                        </div>
-                        <div id="history-box" class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar"></div>
+                    <div class="glass p-8 rounded-[3rem] h-96 relative overflow-hidden">
+                        <h4 class="text-[10px] font-black uppercase opacity-40 mb-6 flex items-center gap-2 tracking-widest">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i> Biểu đồ xu hướng
+                        </h4>
+                        <div class="h-64"><canvas id="lineChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="glass p-8 rounded-[3rem]">
+                    <div class="flex items-center justify-between mb-6">
+                        <h4 class="text-[10px] font-black uppercase opacity-40 flex items-center gap-2 tracking-widest"><i data-lucide="history" class="w-4 h-4"></i> Nhật ký sinh học</h4>
+                        <button onclick="resetData()" class="text-[10px] font-black text-red-500/50 hover:text-red-500 uppercase transition">Xóa dữ liệu</button>
+                    </div>
+                    <div id="history-box" class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+                        <div class="opacity-20 italic text-sm p-10 w-full text-center">Chưa có bản ghi nào được lưu trữ...</div>
                     </div>
                 </div>
             </div>
 
-            <div id="tab-symptoms" class="tab-content hidden glass p-8 rounded-[2.5rem]">
-                <h3 class="text-xl font-black mb-6 flex items-center gap-3"><i data-lucide="stethoscope" class="text-emerald-500"></i> AI Symptom Diagnostic</h3>
-                <div id="diagnosis-result" class="space-y-6">
-                    <div class="p-10 border-2 border-dashed border-white/5 rounded-3xl text-center opacity-30 italic">Vui lòng chọn triệu chứng ở menu bên trái để bắt đầu phân tích.</div>
+            <div id="tab-diet" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-1 space-y-6">
+                        <div class="glass p-8 rounded-[2.5rem]">
+                            <h4 class="font-black text-xs mb-6 uppercase tracking-tighter text-blue-500">Nạp năng lượng</h4>
+                            <div class="space-y-4">
+                                <input type="text" id="food-input" placeholder="Tên món ăn..." class="w-full rounded-2xl p-4 text-xs outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                <input type="number" id="cal-input" placeholder="Calories (kcal)..." class="w-full rounded-2xl p-4 text-xs outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                <button onclick="addFood()" class="w-full bg-blue-600 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition">Ghi nhận</button>
+                            </div>
+                        </div>
+                        <div class="glass p-8 rounded-[2.5rem] bg-gradient-to-br from-blue-600/10 to-transparent">
+                            <p class="text-[10px] font-black opacity-40 uppercase mb-2">Hạn ngạch mục tiêu</p>
+                            <div class="text-5xl font-black tracking-tighter" id="target-cal">2000</div>
+                            <p class="text-[10px] mt-3 opacity-30 font-bold uppercase tracking-widest italic">Kilocalories / Ngày</p>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2 glass p-8 rounded-[3rem] flex flex-col h-full">
+                        <div class="flex items-center justify-between mb-8">
+                            <h4 class="font-black uppercase text-xs tracking-widest flex items-center gap-3"><i data-lucide="utensils" class="text-orange-500 w-5 h-5"></i> Menu hôm nay</h4>
+                            <div class="text-right">
+                                <span class="text-3xl font-black text-orange-500" id="consumed-cal">0</span>
+                                <span class="text-xs opacity-30 font-bold">/ KCAL</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-black/20 h-3 rounded-full overflow-hidden mb-8 border border-white/5">
+                            <div id="diet-progress" class="h-full bg-gradient-to-r from-orange-600 to-orange-400 w-0 transition-all duration-1000"></div>
+                        </div>
+                        <div id="diet-log" class="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-4">
+                            <div class="text-center py-20 opacity-20 italic text-sm">Chưa phát hiện dữ liệu dinh dưỡng hôm nay.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div id="tab-diet" class="tab-content hidden glass p-8 rounded-[2.5rem]">
-                <div class="flex flex-col md:flex-row gap-8">
-                    <div class="flex-1 space-y-4">
-                        <h4 class="font-black text-xs uppercase opacity-40">Thêm bữa ăn</h4>
-                        <input type="text" id="food-input" placeholder="Tên món ăn" class="w-full bg-white/5 rounded-xl p-3 outline-none">
-                        <input type="number" id="cal-input" placeholder="Calories" class="w-full bg-white/5 rounded-xl p-3 outline-none">
-                        <button onclick="addFood()" class="w-full bg-blue-600 py-3 rounded-xl font-bold">Lưu bữa ăn</button>
-                    </div>
-                    <div class="flex-1 bg-black/20 rounded-3xl p-6">
-                        <div class="text-center mb-4">
-                            <p class="text-[10px] opacity-40">TỔNG CALO HÔM NAY</p>
-                            <h2 id="consumed-cal" class="text-4xl font-black text-blue-500">0</h2>
+            <div id="tab-sensory" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass p-10 rounded-[3rem] text-center relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-6 opacity-5"><i data-lucide="eye" class="w-20 h-20"></i></div>
+                        <h4 class="font-black uppercase text-[10px] mb-8 tracking-[0.2em] flex items-center justify-center gap-2">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Kiểm tra thị lực
+                        </h4>
+                        <div class="bg-white text-black h-56 w-full rounded-[2rem] flex items-center justify-center mb-8 shadow-inner overflow-hidden">
+                            <span id="snellen-char" class="font-serif font-black transition-all duration-300">E</span>
                         </div>
-                        <div id="diet-log" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                        <div class="flex items-center justify-around mb-8">
+                            <button onclick="stepVision(-1)" class="p-5 bg-black/20 rounded-2xl border border-white/5 hover:bg-white/10 transition active:scale-90"><i data-lucide="minus"></i></button>
+                            <div class="text-center">
+                                <p class="text-3xl font-black tracking-tighter" id="vision-val">20/200</p>
+                                <p class="text-[9px] opacity-40 uppercase font-black tracking-widest mt-1">Snellen Score</p>
+                            </div>
+                            <button onclick="stepVision(1)" class="p-5 bg-black/20 rounded-2xl border border-white/5 hover:bg-white/10 transition active:scale-90"><i data-lucide="plus"></i></button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 font-medium italic px-4 leading-relaxed">Giữ khoảng cách ~60cm. Điều chỉnh cho đến khi bạn thấy ký tự sắc nét nhất.</p>
+                    </div>
+
+                    <div class="glass p-10 rounded-[3rem] text-center relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-6 opacity-5"><i data-lucide="ear" class="w-20 h-20"></i></div>
+                        <h4 class="font-black uppercase text-[10px] mb-8 tracking-[0.2em] flex items-center justify-center gap-2">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Tần số thính giác
+                        </h4>
+                        <div class="mb-10 py-10">
+                            <div id="freq-display" class="text-7xl font-black text-blue-500 tracking-tighter mb-2">440<span class="text-xl ml-2 opacity-30 italic font-normal tracking-normal">Hz</span></div>
+                            <p class="text-[10px] font-black opacity-30 uppercase tracking-[0.3em]">Current Frequency</p>
+                        </div>
+                        <input type="range" id="freq-range" min="20" max="18000" value="440" class="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-blue-600 mb-10">
+                        <button id="audio-btn" onclick="toggleAudio()" class="w-full bg-white text-black py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition hover:bg-blue-50 active:scale-95 shadow-xl">
+                            <i data-lucide="play" class="w-4 h-4 fill-current"></i> Bắt đầu kiểm tra
+                        </button>
+                        <p class="text-[9px] text-red-500/60 mt-6 font-black uppercase italic tracking-widest animate-pulse">⚠️ Chú ý: Giảm âm lượng trước khi phát</p>
                     </div>
                 </div>
             </div>
+
         </div>
     </main>
 
-    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass p-2 rounded-2xl z-[100] flex justify-between items-center shadow-2xl border border-white/10">
-        <button onclick="switchTab('dashboard')" class="tab-btn active flex-1 py-3 rounded-xl flex flex-col items-center gap-1">
-            <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[8px] font-bold uppercase">Dashboard</span>
-        </button>
-        <button onclick="switchTab('diet')" class="tab-btn flex-1 py-3 rounded-xl flex flex-col items-center gap-1">
-            <i data-lucide="utensils" class="w-5 h-5"></i><span class="text-[8px] font-bold uppercase">Ăn uống</span>
-        </button>
-        <button onclick="switchTab('symptoms')" class="tab-btn flex-1 py-3 rounded-xl flex flex-col items-center gap-1">
-            <i data-lucide="activity" class="w-5 h-5"></i><span class="text-[8px] font-bold uppercase">AI Chẩn đoán</span>
-        </button>
+    <div id="ai-chat-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-3xl">
+        <div class="glass max-w-4xl w-full rounded-[3.5rem] overflow-hidden flex flex-col border-white/10 shadow-2xl scale-95 transition-transform duration-500" id="modal-container">
+            <div class="p-8 border-b border-white/5 flex justify-between items-center bg-blue-600/5">
+                <div class="flex items-center gap-5">
+                    <div class="w-16 h-16 bg-blue-600 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-blue-500/40 relative">
+                        <i data-lucide="bot" class="text-white w-9 h-9"></i>
+                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-2xl tracking-tighter uppercase">AI Biological Report</h3>
+                        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.3em]">Quantum Diagnosis System</p>
+                    </div>
+                </div>
+                <button onclick="closeAI()" class="p-4 hover:bg-white/5 rounded-full transition active:scale-90"><i data-lucide="x"></i></button>
+            </div>
+            <div id="ai-chat-content" class="p-10 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar"></div>
+            <div class="p-10 bg-black/20 flex gap-4">
+                <button onclick="downloadReport()" class="flex-1 bg-white/5 py-5 rounded-2xl text-[10px] font-black uppercase border border-white/5 hover:bg-white/10 transition flex items-center justify-center gap-3 tracking-widest"><i data-lucide="download" class="w-4 h-4"></i> Xuất Report (PNG)</button>
+                <button onclick="closeAI()" class="flex-1 bg-blue-600 py-5 rounded-2xl text-[10px] font-black uppercase hover:bg-blue-500 transition shadow-xl shadow-blue-500/20 tracking-widest">Xác nhận & Lưu trữ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest translate-y-20 opacity-0 transition-all duration-500 pointer-events-none">
+        Thông báo hệ thống
     </div>
 
     <script>
-        const proverbs = ["Sức khỏe là vàng.", "Ăn được ngủ được là tiên.", "Đau bụng lấy tay mà rờ.", "Cơm là bản, cá là vây."];
-        let logs = JSON.parse(localStorage.getItem('healthy_v3_logs')) || [];
-        let radar;
-        let waterDrank = 0;
+        // --- DATA & STATE ---
+        let logs = JSON.parse(localStorage.getItem('healthy_logs')) || [];
+        let radar, line, audioCtx, oscillator;
+        let isAudioPlaying = false;
+        let consumed = 0;
+        const snellen = [{l:"20/200", s:120}, {l:"20/100", s:80}, {l:"20/70", s:60}, {l:"20/50", s:40}, {l:"20/20", s:14}];
+        let currentS = 0;
 
-        // INIT
-        window.onload = () => {
+        // --- INTRO ANIMATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                gsap.to("#loader", { opacity: 0, duration: 1, onComplete: () => {
+                    document.getElementById('loader').style.display = 'none';
+                    setGreeting();
+                }});
+            }, 1500);
             lucide.createIcons();
-            const p = document.getElementById('proverb');
-            p.innerText = `"${proverbs[Math.floor(Math.random()*proverbs.length)]}"`;
-            setTimeout(() => p.style.opacity = '1', 200);
-            setTimeout(() => {
-                document.getElementById('loader').style.width = '100%';
-            }, 100);
-            setTimeout(() => {
-                document.getElementById('splash-screen').style.opacity = '0';
-                setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 800);
-            }, 2000);
-
-            initChart();
+            initCharts();
             renderHistory();
-        };
+        });
 
+        function setGreeting() {
+            const hour = new Date().getHours();
+            const g = document.getElementById('greeting');
+            if(hour < 12) g.innerText = "Chào buổi sáng, năng lượng mới!";
+            else if(hour < 18) g.innerText = "Chào buổi chiều, duy trì phong độ nhé!";
+            else g.innerText = "Chào buổi tối, hãy thư giãn nào!";
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        // --- TAB MANAGEMENT ---
         function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(t => {
+                t.style.display = 'none';
+                t.classList.add('hidden');
+            });
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            activeTab.style.display = 'block';
+            activeTab.classList.remove('hidden');
             event.currentTarget.classList.add('active');
+            
+            gsap.from(activeTab, { opacity: 0, y: 20, duration: 0.5 });
+            if(isAudioPlaying) toggleAudio();
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            const isL = document.body.classList.contains('light-mode');
-            document.getElementById('theme-icon').setAttribute('data-lucide', isL ? 'moon' : 'sun');
-            lucide.createIcons();
-        }
-
-        // --- HEALTH LOGIC ---
+        // --- CALCULATION CORE ---
         function processData() {
             const w = parseFloat(document.getElementById('weight').value);
             const h = parseFloat(document.getElementById('height').value);
-            const a = parseInt(document.getElementById('age').value);
-            const name = document.getElementById('name').value || "Người dùng";
+            const age = parseInt(document.getElementById('age').value);
+            const g = document.getElementById('gender').value;
+            const act = parseFloat(document.getElementById('activity').value);
+            const name = document.getElementById('name').value || "User";
 
-            if(!w || !h || !a) return;
+            if(!w || !h || !age) return showToast("⚠️ Thiếu thông số cơ bản!");
 
             const bmi = (w / ((h/100)**2)).toFixed(1);
-            const tdee = Math.round((10 * w + 6.25 * h - 5 * a + 5) * 1.2);
-            const water = Math.round(w * 35);
+            const bmr = (g === 'male') ? (10 * w) + (6.25 * h) - (5 * age) + 5 : (10 * w) + (6.25 * h) - (5 * age) - 161;
+            const tdee = Math.round(bmr * act);
+            const bf = Math.abs((1.2 * bmi) + (0.23 * age) - 16.2).toFixed(1);
+
+            // Bio-Score Calculation (Simple Logic)
+            let score = 100 - (Math.abs(bmi - 22) * 5);
+            score = Math.max(0, Math.min(100, Math.round(score)));
+            document.getElementById('bio-score').innerText = score + "/100";
 
             document.getElementById('res-bmi').innerText = bmi;
+            document.getElementById('res-bmr').innerText = Math.round(bmr);
             document.getElementById('res-tdee').innerText = tdee;
-            document.getElementById('res-water-target').innerText = water;
+            document.getElementById('res-fat').innerText = bf + "%";
+            document.getElementById('target-cal').innerText = tdee;
 
-            let status = "";
-            if(bmi < 18.5) status = "Thiếu cân - Cần tăng cường dinh dưỡng";
-            else if(bmi < 24.9) status = "Bình thường - Trạng thái rất tốt";
-            else status = "Thừa cân - Cần kiểm soát vận động";
-            document.getElementById('res-status').innerText = status;
-
-            updateChart(bmi);
+            updateCharts(bmi, bf, score);
             saveLog(name, bmi);
+            showSmartTip(bmi);
+            generateAISuggestions(name, age, bmi, g, tdee);
+            showToast("✅ Đã cập nhật chỉ số Neural");
         }
 
-        function addWater() {
-            waterDrank += 250;
-            const target = parseInt(document.getElementById('res-water-target').innerText) || 2500;
-            document.getElementById('water-count').innerText = waterDrank;
-            const percent = Math.min(100, (waterDrank / target) * 100);
-            document.getElementById('water-card').style.setProperty('--p', percent + '%');
+        // --- CHARTS ---
+        function initCharts() {
+            const rCtx = document.getElementById('radarChart').getContext('2d');
+            radar = new Chart(rCtx, {
+                type: 'radar',
+                data: { 
+                    labels: ['BMI', 'Fat', 'Age', 'Bio-Score', 'Activity'], 
+                    datasets: [{ 
+                        data: [0,0,0,0,0], 
+                        borderColor: '#3b82f6', 
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+                        pointRadius: 4,
+                        borderWidth: 2
+                    }] 
+                },
+                options: { 
+                    scales: { r: { grid: { color: 'rgba(255,255,255,0.05)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, ticks: { display: false }, pointLabels: { color: '#64748b', font: { weight: 'bold' } } } }, 
+                    plugins: { legend: { display: false } } 
+                }
+            });
+
+            const lCtx = document.getElementById('lineChart').getContext('2d');
+            line = new Chart(lCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'BMI Trend', data: [], borderColor: '#10b981', tension: 0.4, fill: true, backgroundColor: 'rgba(16, 185, 129, 0.05)', borderWidth: 3 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#64748b' }, grid: { display: false } }, y: { display: false } }, plugins: { legend: { display: false } } }
+            });
         }
 
-        // --- SYMPTOM CHECKER ---
-        const symptomData = {
-            headache: { title: "Cảm cúm hoặc Thiếu ngủ", advice: "Hãy uống nước ấm, nghỉ ngơi 30 phút. Nếu kèm sốt cao cần gặp bác sĩ.", foods: "Trà gừng, cháo loãng" },
-            fever: { title: "Sốt siêu vi / Nhiễm khuẩn", advice: "Lau mát bằng nước ấm, theo dõi nhiệt độ mỗi 4h. Tránh gió lạnh.", foods: "Nước cam, cháo thịt bằm" },
-            cough: { title: "Viêm họng / Viêm phế quản", advice: "Súc miệng nước muối, giữ ấm cổ. Hạn chế uống nước đá.", foods: "Mật ong, lê chưng" },
-            stomach: { title: "Rối loạn tiêu hóa", advice: "Tránh thức ăn dầu mỡ, cay nóng. Có thể dùng gừng tươi.", foods: "Sữa chua, chuối, bánh mì" },
-            fatigue: { title: "Suy nhược cơ thể", advice: "Bổ sung Vitamin nhóm B, ngủ đủ 8 tiếng. Kiểm tra áp lực công việc.", foods: "Các loại hạt, trứng, rau xanh" }
-        };
-
-        function checkSymptoms() {
-            const sym = document.getElementById('symptom-select').value;
-            if(!sym) return alert("Vui lòng chọn 1 triệu chứng!");
+        function updateCharts(bmi, bf, score) {
+            radar.data.datasets[0].data = [bmi, bf, 30, score, 50];
+            radar.update();
             
-            switchTab('symptoms');
-            const res = symptomData[sym];
-            document.getElementById('diagnosis-result').innerHTML = `
-                <div class="animate-in slide-in-from-bottom duration-500 space-y-4">
-                    <div class="p-6 bg-blue-500/10 border border-blue-500/20 rounded-3xl">
-                        <span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter">AI Dự đoán có thể là</span>
-                        <h4 class="text-2xl font-black">${res.title}</h4>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-5 bg-white/5 rounded-2xl">
-                            <h5 class="text-xs font-bold mb-2 flex items-center gap-2 text-emerald-500"><i data-lucide="check-circle" class="w-4 h-4"></i> Khuyên dùng</h5>
-                            <p class="text-xs opacity-70">${res.advice}</p>
-                        </div>
-                        <div class="p-5 bg-white/5 rounded-2xl">
-                            <h5 class="text-xs font-bold mb-2 flex items-center gap-2 text-orange-500"><i data-lucide="soup" class="w-4 h-4"></i> Món ăn hỗ trợ</h5>
-                            <p class="text-xs opacity-70">${res.foods}</p>
-                        </div>
-                    </div>
-                    <p class="text-[8px] opacity-30 italic">* Lưu ý: Đây là dự đoán từ AI, không thay thế chẩn đoán y khoa chuyên nghiệp.</p>
-                </div>
-            `;
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            if(line.data.labels.length > 7) { line.data.labels.shift(); line.data.datasets[0].data.shift(); }
+            line.data.labels.push(time);
+            line.data.datasets[0].data.push(bmi);
+            line.update();
+        }
+
+        // --- DIET SYSTEM ---
+        function addFood() {
+            const food = document.getElementById('food-input').value;
+            const cal = parseInt(document.getElementById('cal-input').value);
+            const target = parseInt(document.getElementById('target-cal').innerText) || 2000;
+            if(!food || !cal) return;
+
+            consumed += cal;
+            const log = document.getElementById('diet-log');
+            if(consumed === cal) log.innerHTML = "";
+            
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center p-5 glass rounded-2xl border border-white/5 animate-in slide-in-from-right duration-500";
+            div.innerHTML = `<div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-orange-500 rounded-full"></div><span class="text-xs font-bold">${food}</span></div><span class="text-xs font-black text-orange-500">+${cal} kcal</span>`;
+            log.prepend(div);
+
+            document.getElementById('consumed-cal').innerText = consumed;
+            document.getElementById('diet-progress').style.width = Math.min(100, (consumed/target)*100) + "%";
+            document.getElementById('food-input').value = "";
+            document.getElementById('cal-input').value = "";
+            showToast("🍎 Đã nạp dinh dưỡng");
+        }
+
+        // --- SENSORY TESTS ---
+        function stepVision(dir) {
+            currentS = Math.max(0, Math.min(snellen.length - 1, currentS + dir));
+            const stage = snellen[currentS];
+            const el = document.getElementById('snellen-char');
+            el.style.fontSize = stage.s + "px";
+            el.innerText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random()*26)];
+            document.getElementById('vision-val').innerText = stage.l;
+            gsap.from(el, { scale: 1.5, opacity: 0, duration: 0.3 });
+        }
+
+        function toggleAudio() {
+            const btn = document.getElementById('audio-btn');
+            if(!isAudioPlaying) {
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                oscillator = audioCtx.createOscillator();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(document.getElementById('freq-range').value, audioCtx.currentTime);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                oscillator.connect(gain); gain.connect(audioCtx.destination);
+                oscillator.start();
+                btn.classList.add('bg-red-500', 'text-white');
+                btn.innerHTML = '<i data-lucide="square" class="fill-current"></i> Dừng kiểm tra';
+                isAudioPlaying = true;
+            } else {
+                oscillator.stop();
+                btn.classList.remove('bg-red-500', 'text-white');
+                btn.innerHTML = '<i data-lucide="play" class="fill-current"></i> Bắt đầu kiểm tra';
+                isAudioPlaying = false;
+            }
             lucide.createIcons();
         }
 
-        // --- UTILS ---
+        document.getElementById('freq-range').oninput = (e) => {
+            document.getElementById('freq-display').innerHTML = `${e.target.value}<span class="text-xl ml-2 opacity-30 font-normal italic">Hz</span>`;
+            if(isAudioPlaying) oscillator.frequency.setValueAtTime(e.target.value, audioCtx.currentTime);
+        };
+
+        // --- AI & LOGGING ---
         function saveLog(name, bmi) {
-            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            logs.unshift({name, bmi, time});
-            if(logs.length > 5) logs.pop();
-            localStorage.setItem('healthy_v3_logs', JSON.stringify(logs));
+            const t = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            logs.push({t, n: name, b: bmi});
+            if(logs.length > 10) logs.shift();
+            localStorage.setItem('healthy_logs', JSON.stringify(logs));
             renderHistory();
         }
 
         function renderHistory() {
             const box = document.getElementById('history-box');
             if(logs.length === 0) return;
-            box.innerHTML = logs.map(l => `
-                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
-                    <div><p class="text-[10px] font-bold">${l.name}</p><p class="text-[8px] opacity-40">${l.time}</p></div>
-                    <div class="text-lg font-black text-blue-500">${l.bmi}</div>
+            box.innerHTML = logs.slice().reverse().map(l => `
+                <div class="flex-shrink-0 p-6 glass rounded-[2rem] min-w-[160px] text-center border-white/5 hover:border-blue-500/30 transition">
+                    <p class="text-[8px] font-black opacity-30 uppercase mb-2">${l.t}</p>
+                    <p class="text-xs font-bold text-blue-500 truncate mb-2">${l.n}</p>
+                    <p class="text-3xl font-black italic tracking-tighter">${l.b}</p>
+                    <p class="text-[8px] opacity-30 font-bold uppercase tracking-widest mt-1">BMI Record</p>
                 </div>
             `).join('');
         }
 
-        function clearHistory() {
-            if(confirm("Xóa lịch sử?")) {
-                logs = [];
-                localStorage.removeItem('healthy_v3_logs');
-                renderHistory();
+        function showSmartTip(bmi) {
+            const text = document.getElementById('tip-text');
+            if(bmi > 25) text.innerText = "Hệ thống phát hiện BMI cao. Khuyên nghị: Tăng 15% Cardio và ưu tiên thực phẩm Low-Carb.";
+            else if(bmi < 18.5) text.innerText = "Cơ thể đang ở mức báo động thiếu hụt. AI khuyên bạn bổ sung ngay Protein phức hợp.";
+            else text.innerText = "Trạng thái Biological lý tưởng. Hãy duy trì thói quen ngủ trước 23:00 để tối ưu hóa tế bào.";
+        }
+
+        function generateAISuggestions(name, age, bmi, gender, tdee) {
+            const modal = document.getElementById('ai-chat-modal');
+            const content = document.getElementById('ai-chat-content');
+            modal.style.display = 'flex';
+            gsap.from("#modal-container", { scale: 0.8, opacity: 0, duration: 0.5, ease: "back.out(1.7)" });
+
+            content.innerHTML = `
+                <div class="space-y-8">
+                    <div class="p-8 bg-blue-600/10 border border-blue-500/20 rounded-[2.5rem] relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 opacity-5"><i data-lucide="activity" class="w-32 h-32"></i></div>
+                        <h4 class="text-blue-500 font-black text-[10px] uppercase mb-4 flex items-center gap-3 tracking-[0.2em]"><i data-lucide="fingerprint"></i> Phân tích Biological</h4>
+                        <p class="text-sm leading-relaxed opacity-90 font-medium italic">"Chào ${name}, phân tích thuật toán cho thấy ở độ tuổi ${age}, cơ thể bạn cần chính xác ${tdee} kcal để duy trì cân bằng Neural. Với chỉ số BMI ${bmi}, bạn đang ở trạng thái ${bmi > 25 ? 'Cần điều chỉnh cường độ' : 'Ổn định sinh học'}. Hệ thống đã nạp lịch trình dinh dưỡng tối ưu bên dưới."</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="p-6 glass rounded-3xl border border-white/5 relative group">
+                            <span class="text-[9px] font-black uppercase text-emerald-500 tracking-widest">07:00 - Năng lượng</span>
+                            <p class="text-xs mt-3 opacity-60 leading-relaxed">Protein Clean (Ức gà/Trứng) + 1 ly nước chanh ấm để detox hệ tiêu hóa.</p>
+                        </div>
+                        <div class="p-6 glass rounded-3xl border border-white/5 relative group">
+                            <span class="text-[9px] font-black uppercase text-orange-500 tracking-widest">12:00 - Phục hồi</span>
+                            <p class="text-xs mt-3 opacity-60 leading-relaxed">Carb phức hợp (Cơm lứt) + Omega 3 từ cá + Rau xanh đậm để hỗ trợ não bộ.</p>
+                        </div>
+                        <div class="p-6 glass rounded-3xl border border-white/5 relative group">
+                            <span class="text-[9px] font-black uppercase text-purple-500 tracking-widest">19:00 - Nghỉ ngơi</span>
+                            <p class="text-xs mt-3 opacity-60 leading-relaxed">Salad nhẹ hoặc Súp. Tuyệt đối không nạp tinh bột nhanh sau 20:00.</p>
+                        </div>
+                    </div>
+                    <div class="p-8 bg-indigo-500/5 border border-indigo-500/10 rounded-[2.5rem] flex flex-col md:flex-row gap-10 justify-around items-center">
+                        <div class="flex items-center gap-5">
+                            <div class="p-4 bg-indigo-500/10 rounded-2xl"><i data-lucide="moon" class="text-indigo-400"></i></div>
+                            <div><p class="text-[9px] opacity-40 uppercase font-black">Giờ ngủ vàng</p><p class="font-black text-lg">22:30 - 06:15</p></div>
+                        </div>
+                        <div class="w-px h-10 bg-white/10 hidden md:block"></div>
+                        <div class="flex items-center gap-5">
+                            <div class="p-4 bg-blue-500/10 rounded-2xl"><i data-lucide="dumbbell" class="text-blue-400"></i></div>
+                            <div><p class="text-[9px] opacity-40 uppercase font-black">Training khuyên dùng</p><p class="font-black text-lg">45' High Intensity</p></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // --- UTILS ---
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isL = document.body.classList.contains('light-mode');
+            document.getElementById('theme-icon').setAttribute('data-lucide', isL ? 'moon' : 'sun');
+            lucide.createIcons();
+            showToast(isL ? "☀️ Light Mode Activated" : "🌙 Dark Mode Activated");
+        }
+
+        function closeAI() {
+            gsap.to("#modal-container", { scale: 0.8, opacity: 0, duration: 0.3, onComplete: () => {
+                document.getElementById('ai-chat-modal').style.display = 'none';
+                document.getElementById('modal-container').style.transform = "scale(1)";
+                document.getElementById('modal-container').style.opacity = "1";
+            }});
+        }
+        
+        function resetData() {
+            if(confirm("Xác nhận xóa sạch bộ nhớ sinh học?")) {
+                localStorage.removeItem('healthy_logs');
+                location.reload();
             }
         }
 
-        function initChart() {
-            const ctx = document.getElementById('radarChart').getContext('2d');
-            radar = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: ['BMI', 'Nước', 'Ăn uống', 'Vận động', 'Ngủ'],
-                    datasets: [{
-                        data: [0,0,0,0,0],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderWidth: 2,
-                        pointRadius: 0
-                    }]
-                },
-                options: { 
-                    scales: { r: { grid: { color: 'rgba(255,255,255,0.05)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, ticks: { display: false } } },
-                    plugins: { legend: { display: false } }
-                }
+        function downloadReport() {
+            showToast("📸 Đang khởi tạo Report...");
+            html2canvas(document.body).then(canvas => {
+                const a = document.createElement('a');
+                a.download = 'Healthyai-Bio-Report.png';
+                a.href = canvas.toDataURL();
+                a.click();
             });
-        }
-
-        function updateChart(bmi) {
-            radar.data.datasets[0].data = [bmi, 70, 60, 80, 50];
-            radar.update();
-        }
-
-        function addFood() {
-            const f = document.getElementById('food-input').value;
-            const c = parseInt(document.getElementById('cal-input').value);
-            if(!f || !c) return;
-            const log = document.getElementById('diet-log');
-            const div = document.createElement('div');
-            div.className = "flex justify-between text-[10px] p-2 bg-white/5 rounded-lg";
-            div.innerHTML = `<span>${f}</span><span class="font-bold text-blue-400">+${c}</span>`;
-            log.prepend(div);
-            let current = parseInt(document.getElementById('consumed-cal').innerText);
-            document.getElementById('consumed-cal').innerText = current + c;
-            document.getElementById('food-input').value = "";
-            document.getElementById('cal-input').value = "";
         }
     </script>
 </body>
